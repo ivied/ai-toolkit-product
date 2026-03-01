@@ -78,7 +78,10 @@ Pay once with USDT → get everything.
 
 ### 🔧 Templates
 - GitHub Actions workflows (daily reports, health checks)
-- Slack bot template
+- Slack bot template (Socket Mode)
+- Telegram bot template (python-telegram-bot)
+- Notion integration template
+- Cron job setup script
 
 ## Quick Start
 
