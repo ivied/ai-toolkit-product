@@ -92,16 +92,19 @@ def cmd_filter(args):
     filtered = []
     for row in rows:
         row_val = row.get(field, "")
+        matched = False
         try:
-            # Try numeric comparison
-            if op_func not in (operator.eq, operator.ne) or re.match(r'^-?\d+\.?\d*$', value):
-                if op_func(float(row_val), float(value)):
-                    filtered.append(row)
-                    continue
+            # Try numeric comparison first
+            num_row = float(row_val)
+            num_val = float(value)
+            matched = op_func(num_row, num_val)
         except (ValueError, TypeError):
-            pass
-        # String comparison
-        if op_func(row_val, value):
+            # Fall back to string comparison only if numeric failed
+            try:
+                matched = op_func(row_val, value)
+            except TypeError:
+                matched = False
+        if matched:
             filtered.append(row)
 
     out = args.output or f"{Path(args.file).stem}_filtered.csv"
