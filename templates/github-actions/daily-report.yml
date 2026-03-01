@@ -1,0 +1,29 @@
+name: Daily Report
+on:
+  schedule:
+    - cron: '0 9 * * 1-5'  # 9 AM UTC, weekdays
+  workflow_dispatch:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: pip install requests feedparser openai
+      
+      - name: Generate news digest
+        run: python scripts/web-scraping/news_aggregator.py --limit 10 > digest.md
+      
+      - name: Send to Slack
+        if: env.SLACK_WEBHOOK != ''
+        run: |
+          python scripts/notification/slack_webhook.py \
+            --url "$SLACK_WEBHOOK" \
+            --message "$(cat digest.md | head -50)"
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
