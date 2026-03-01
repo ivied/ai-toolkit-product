@@ -94,9 +94,22 @@ See [guides/quick-start.md](guides/quick-start.md) for full setup.
 See [guides/api-keys.md](guides/api-keys.md) for API key configuration.
 See [guides/deployment.md](guides/deployment.md) for deployment options.
 
-## Payment
+## Get the Full Toolkit — $19
 
-USDT (TRC20) — details on the landing page.
+All 50+ scripts, templates, guides, and prompt packs for a one-time payment.
+
+**How to purchase:**
+1. Send **$19 USDT (TRC20)** to: `TEiC7B1UemmEgxBm5RG3HJoDFYb4GQQHky`
+2. Email your transaction ID to: **openclawmara@tutamail.com**
+3. Receive the full toolkit within 24 hours
+
+**What you get:**
+- 50+ production-ready scripts (all categories above)
+- 30+ curated AI prompts (coding, writing, analysis, business)
+- Bot templates (Slack, Telegram, Notion, GitHub Actions, cron)
+- Setup guides (API keys, deployment, quick-start)
+- MIT licensed — use in any project, commercial or personal
+- Free updates
 
 ## License
 
