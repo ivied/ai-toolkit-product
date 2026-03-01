@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Toolkit — 50+ Automation Scripts & Prompts</title>
+    <meta name="description" content="Production-ready Python scripts, curated prompts, and templates for AI automation. Price monitoring, document RAG, batch processing, and more.">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+            --green: #36d399;
+            --orange: #fbbd23;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, -apple-system, sans-serif; line-height: 1.7; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 6rem 2rem 4rem;
+            background: linear-gradient(180deg, rgba(102,126,234,0.08) 0%, transparent 60%);
+        }
+        .hero .badge {
+            display: inline-block;
+            background: rgba(102,126,234,0.15);
+            color: var(--accent);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(102,126,234,0.2);
+        }
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #fff 30%, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p { font-size: 1.2rem; color: var(--text-dim); max-width: 600px; margin: 0 auto 2rem; }
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(102,126,234,0.3); text-decoration: none; }
+        .hero-price { font-size: 0.95rem; color: var(--text-dim); margin-top: 0.8rem; }
+
+        /* Container */
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+
+        /* Section */
+        section { padding: 4rem 0; }
+        section h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        section .subtitle {
+            text-align: center;
+            color: var(--text-dim);
+            margin-bottom: 3rem;
+            font-size: 1.05rem;
+        }
+
+        /* Features grid */
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .feature {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: border-color 0.2s;
+        }
+        .feature:hover { border-color: var(--accent); }
+        .feature .icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .feature h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .feature p { color: var(--text-dim); font-size: 0.95rem; }
+        .feature .count { color: var(--accent); font-size: 0.85rem; font-weight: 600; }
+
+        /* Contents */
+        .contents-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .content-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem 1.2rem;
+        }
+        .content-item h4 { font-size: 0.95rem; margin-bottom: 0.3rem; }
+        .content-item p { font-size: 0.85rem; color: var(--text-dim); }
+
+        /* Code preview */
+        .preview {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 700px;
+            margin: 2rem auto;
+            overflow-x: auto;
+        }
+        .preview code {
+            color: var(--green);
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+        }
+        .preview .comment { color: #666; }
+        .preview .string { color: var(--orange); }
+
+        /* Pricing */
+        .pricing-card {
+            background: var(--surface);
+            border: 2px solid var(--accent);
+            border-radius: 16px;
+            padding: 3rem;
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .pricing-card .price {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 1rem 0;
+        }
+        .pricing-card .price-note { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .pricing-card ul {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+        .pricing-card li {
+            padding: 0.4rem 0;
+            font-size: 0.95rem;
+        }
+        .pricing-card li::before {
+            content: "✓ ";
+            color: var(--green);
+            font-weight: bold;
+        }
+
+        /* Payment */
+        .payment {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            margin: 2rem auto 0;
+        }
+        .payment h3 { margin-bottom: 1rem; font-size: 1.2rem; }
+        .payment ol { padding-left: 1.5rem; }
+        .payment li { margin-bottom: 0.8rem; color: var(--text-dim); }
+        .wallet-addr {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            margin: 0.5rem 0;
+            cursor: pointer;
+            position: relative;
+        }
+        .wallet-addr:hover::after {
+            content: "Click to copy";
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            color: var(--accent);
+        }
+
+        /* FAQ */
+        .faq { max-width: 700px; margin: 0 auto; }
+        .faq-item { border-bottom: 1px solid var(--border); padding: 1.2rem 0; }
+        .faq-item h4 { font-size: 1rem; margin-bottom: 0.5rem; cursor: pointer; }
+        .faq-item p { color: var(--text-dim); font-size: 0.95rem; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+            .hero { padding: 4rem 1.5rem 3rem; }
+            .features, .contents-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <span class="badge">🤖 50+ Ready-to-Use Scripts & Prompts</span>
+    <h1>AI Agent Toolkit</h1>
+    <p>Production-ready Python scripts, curated prompts, and integration templates. Stop building from scratch — start shipping.</p>
+    <a href="#buy" class="hero-cta">Get the Toolkit — $19</a>
+    <p class="hero-price">One-time payment · Instant delivery · All future updates</p>
+</div>
+
+<section>
+    <div class="container">
+        <h2>What's Inside</h2>
+        <p class="subtitle">Everything you need to automate with AI — tested and documented</p>
+        <div class="features">
+            <div class="feature">
+                <div class="icon">🤖</div>
+                <h3>AI Integration Scripts</h3>
+                <p>Batch document summarizer, RAG chat with docs, structured data extractor, image gallery generator</p>
+                <div class="count">10 scripts</div>
+            </div>
+            <div class="feature">
+                <div class="icon">🌐</div>
+                <h3>Web Scraping</h3>
+                <p>Price monitor with alerts, job scraper, news aggregator, API data collector</p>
+                <div class="count">6 scripts</div>
+            </div>
+            <div class="feature">
+                <div class="icon">📁</div>
+                <h3>Productivity</h3>
+                <p>Smart file organizer, Markdown to PDF converter, email template engine, note taker</p>
+                <div class="count">8 scripts</div>
+            </div>
+            <div class="feature">
+                <div class="icon">🔔</div>
+                <h3>Notifications</h3>
+                <p>Telegram bot template, Slack webhook notifier, Discord bot, email alerter</p>
+                <div class="count">6 scripts</div>
+            </div>
+            <div class="feature">
+                <div class="icon">⚙️</div>
+                <h3>DevOps</h3>
+                <p>Health checker, deploy scripts, log analyzer, backup automation, Docker helpers</p>
+                <div class="count">8 scripts</div>
+            </div>
+            <div class="feature">
+                <div class="icon">📊</div>
+                <h3>Data Processing</h3>
+                <p>CSV swiss-army knife, JSON transformer, deduplication tool, report generator</p>
+                <div class="count">6 scripts</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section style="background: rgba(102,126,234,0.03);">
+    <div class="container">
+        <h2>Plus: 30+ Curated Prompts</h2>
+        <p class="subtitle">Copy-paste prompts that actually work — organized by category</p>
+        <div class="contents-grid">
+            <div class="content-item">
+                <h4>🧑‍💻 Coding</h4>
+                <p>Code review, debugging, refactoring, API design, test generation, SQL optimization</p>
+            </div>
+            <div class="content-item">
+                <h4>✍️ Writing</h4>
+                <p>Blog posts, email sequences, social media calendar, technical docs, tone rewriter</p>
+            </div>
+            <div class="content-item">
+                <h4>📊 Analysis</h4>
+                <p>Data analysis, market research, root cause analysis, decision frameworks</p>
+            </div>
+            <div class="content-item">
+                <h4>💼 Business</h4>
+                <p>Competitor analysis, pitch decks, pricing strategy, customer interviews</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <h2>Preview: CSV Toolkit</h2>
+        <p class="subtitle">One of 50+ scripts — a complete CSV swiss-army knife</p>
+        <div class="preview">
+            <code>
+                <span class="comment"># Show stats about any CSV file</span><br>
+                $ python csv_toolkit.py info customers.csv<br>
+                <br>
+                <span class="comment"># Filter rows with simple conditions</span><br>
+                $ python csv_toolkit.py filter sales.csv <span class="string">"revenue > 10000"</span><br>
+                <br>
+                <span class="comment"># Remove duplicates by email</span><br>
+                $ python csv_toolkit.py dedup contacts.csv --by email<br>
+                <br>
+                <span class="comment"># Convert to JSON</span><br>
+                $ python csv_toolkit.py convert data.csv --to json<br>
+                <br>
+                <span class="comment"># Split into files by country</span><br>
+                $ python csv_toolkit.py split users.csv --by country<br>
+                <br>
+                <span class="comment"># Merge two files on a key</span><br>
+                $ python csv_toolkit.py merge orders.csv customers.csv --on customer_id
+            </code>
+        </div>
+    </div>
+</section>
+
+<section id="buy" style="background: rgba(102,126,234,0.03);">
+    <div class="container">
+        <h2>Get the Toolkit</h2>
+        <p class="subtitle">One-time payment, no subscription</p>
+        <div class="pricing-card">
+            <div class="price">$19</div>
+            <div class="price-note">Paid in USDT (TRC-20) · Instant delivery via email</div>
+            <ul>
+                <li>50+ production-ready Python scripts</li>
+                <li>30+ curated AI prompts</li>
+                <li>Integration templates (Slack, Telegram, Notion)</li>
+                <li>Setup guides and documentation</li>
+                <li>All future updates included</li>
+                <li>MIT licensed — use commercially</li>
+            </ul>
+            <a href="#payment" class="hero-cta" style="width: 100%; justify-content: center;">Buy Now — $19 USDT</a>
+        </div>
+
+        <div id="payment" class="payment">
+            <h3>📦 How to Purchase</h3>
+            <ol>
+                <li><strong>Send $19 USDT (TRC-20)</strong> to this wallet address:
+                    <div class="wallet-addr" onclick="navigator.clipboard.writeText('TEiC7B1UemmEgxBm5RG3HJoDFYb4GQQHky')">
+                        TEiC7B1UemmEgxBm5RG3HJoDFYb4GQQHky
+                    </div>
+                </li>
+                <li><strong>Email your transaction hash</strong> to <a href="mailto:openclawmara@tutamail.com">openclawmara@tutamail.com</a></li>
+                <li><strong>Receive the toolkit</strong> within 1 hour (usually minutes)</li>
+            </ol>
+            <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-dim);">
+                ⚡ Using a different crypto? Contact us at the email above — we're flexible.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <h2>FAQ</h2>
+        <div class="faq">
+            <div class="faq-item">
+                <h4>What Python version do I need?</h4>
+                <p>Python 3.10+. Most scripts use only standard library + httpx. Requirements are listed in each script's header.</p>
+            </div>
+            <div class="faq-item">
+                <h4>Do I need API keys?</h4>
+                <p>Only for AI-powered scripts (OpenAI/Anthropic). Many scripts (file organizer, CSV toolkit, price monitor) work without any API keys.</p>
+            </div>
+            <div class="faq-item">
+                <h4>Can I use these commercially?</h4>
+                <p>Yes! Everything is MIT licensed. Use in your projects, products, or client work — no attribution required.</p>
+            </div>
+            <div class="faq-item">
+                <h4>Why USDT and not credit card?</h4>
+                <p>Crypto enables instant, global payments with no middlemen fees. We're exploring additional payment methods — email us if you need alternatives.</p>
+            </div>
+            <div class="faq-item">
+                <h4>How do I get updates?</h4>
+                <p>Email us with your transaction hash and we'll add you to the update list. New scripts and improvements are included free.</p>
+            </div>
+            <div class="faq-item">
+                <h4>Can I get a refund?</h4>
+                <p>Due to the digital nature of the product, refunds are handled on a case-by-case basis. If the toolkit doesn't meet your expectations, reach out.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <p>AI Agent Toolkit · Built with 🤖 by <a href="mailto:openclawmara@tutamail.com">openclawmara</a></p>
+    <p style="margin-top: 0.5rem;">Questions? → openclawmara@tutamail.com</p>
+</footer>
+
+</body>
+</html>

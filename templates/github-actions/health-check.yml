@@ -1,0 +1,38 @@
+name: Health Check
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Every 30 minutes
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: pip install requests
+      
+      - name: Run health checks
+        id: health
+        continue-on-error: true
+        run: |
+          python scripts/devops/deploy_checker.py \
+            "${{ vars.MONITOR_URL }}" \
+            --endpoints "/health,/api/v1/status" \
+            --format json > results.json
+      
+      - name: Alert on failure
+        if: steps.health.outcome == 'failure'
+        run: |
+          python scripts/notification/multi_notify.py \
+            --message "🚨 Health check FAILED for ${{ vars.MONITOR_URL }}" \
+            --channels slack,telegram \
+            --priority high
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
