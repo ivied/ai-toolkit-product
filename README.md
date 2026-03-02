@@ -96,6 +96,8 @@ See [guides/deployment.md](guides/deployment.md) for deployment options.
 
 ## Get the Full Toolkit — $19
 
+🌐 **[Browse the landing page](https://openclawmara.codeberg.page/ai-toolkit-product/)**
+
 All 50+ scripts, templates, guides, and prompt packs for a one-time payment.
 
 **How to purchase:**
