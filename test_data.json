@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Alice",
+    "email": "alice@example.com",
+    "country": "US",
+    "revenue": "15000"
+  },
+  {
+    "name": "Bob",
+    "email": "bob@example.com",
+    "country": "UK",
+    "revenue": "8000"
+  },
+  {
+    "name": "Charlie",
+    "email": "charlie@example.com",
+    "country": "US",
+    "revenue": "22000"
+  },
+  {
+    "name": "Diana",
+    "email": "diana@example.com",
+    "country": "DE",
+    "revenue": "12000"
+  },
+  {
+    "name": "Eve",
+    "email": "eve@example.com",
+    "country": "US",
+    "revenue": "9500"
+  },
+  {
+    "name": "Frank",
+    "email": "frank@example.com",
+    "country": "UK",
+    "revenue": "18000"
+  },
+  {
+    "name": "Alice",
+    "email": "alice@example.com",
+    "country": "US",
+    "revenue": "15000"
+  }
+]
