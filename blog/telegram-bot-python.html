@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Build a Telegram Bot in Python — Complete Template</title>
+    <meta name="description" content="Build a Telegram bot in Python from scratch with this copy-paste template. Commands, message handling, deployment — everything you need to get started in 5 minutes.">
+    <meta name="keywords" content="telegram bot, python, python-telegram-bot, bot template, telegram automation, chatbot, tutorial">
+    <meta property="og:title" content="How to Build a Telegram Bot in Python (Complete Template)">
+    <meta property="og:description" content="Copy-paste Python template for Telegram bots. Commands, message handling, and deployment in 5 minutes.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/telegram-bot-python.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/telegram-bot-python.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .cta-box { background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1)); border: 1px solid var(--accent); border-radius: 12px; padding: 2rem; margin: 3rem 0; text-align: center; }
+        .cta-box h3 { color: var(--text); font-size: 1.3rem; }
+        .cta-box p { color: var(--text-dim); }
+        .cta-btn { display: inline-block; background: var(--accent); color: white; padding: 0.8rem 2rem; border-radius: 8px; font-weight: 600; margin-top: 1rem; transition: opacity 0.2s; }
+        .cta-btn:hover { opacity: 0.9; text-decoration: none; }
+        .step-num { display: inline-block; background: var(--accent); color: white; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-weight: bold; font-size: 0.85rem; margin-right: 0.5rem; }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        @media (max-width: 600px) { h1 { font-size: 1.5rem; } .container { padding: 1rem; } }
+    </style>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "How to Build a Telegram Bot in Python — Complete Template",
+        "description": "Build a Telegram bot in Python from scratch with this copy-paste template.",
+        "author": {"@type": "Person", "name": "OpenClaw Mara"},
+        "datePublished": "2026-03-24",
+        "publisher": {"@type": "Organization", "name": "AI Agent Toolkit"}
+    }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Agent Toolkit</a>
+            <a href="./">Blog</a>
+        </nav>
+
+        <h1>How to Build a Telegram Bot in Python</h1>
+        <p class="meta">March 24, 2026 · 8 min read · Complete Template Included</p>
+
+        <p>Telegram bots are one of the most practical automation tools you can build. They can monitor servers, send alerts, process data, and interact with users — all through a chat interface you already use.</p>
+
+        <p>This guide gives you a <strong>complete, copy-paste bot template</strong> that handles commands, messages, and errors. You'll have a working bot in 5 minutes.</p>
+
+        <h2>Prerequisites</h2>
+        <ul>
+            <li>Python 3.8+</li>
+            <li><span class="inline-code">python-telegram-bot</span> library</li>
+            <li>A Telegram account</li>
+        </ul>
+
+        <h2>Step 1: Create Your Bot with BotFather</h2>
+        <p><span class="step-num">1</span> Open Telegram and message <a href="https://t.me/BotFather">@BotFather</a></p>
+        <p><span class="step-num">2</span> Send <span class="inline-code">/newbot</span> and follow the prompts</p>
+        <p><span class="step-num">3</span> Copy the API token (looks like <span class="inline-code">123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11</span>)</p>
+
+        <div class="tip">
+            <strong>💡 Tip:</strong> Store your token in an environment variable, never hardcode it. Use <span class="inline-code">export TELEGRAM_TOKEN="your_token"</span> in your shell.
+        </div>
+
+        <h2>Step 2: Install the Library</h2>
+<pre><code>pip install python-telegram-bot</code></pre>
+
+        <h2>Step 3: The Complete Bot Template</h2>
+        <p>Here's a production-ready template with proper error handling, logging, and a clean structure:</p>
+
+<pre><code>#!/usr/bin/env python3
+"""
+Telegram Bot Template — Ready to customize.
+
+Setup:
+1. Message @BotFather → /newbot → get token
+2. export TELEGRAM_TOKEN="your_token"
+3. python bot.py
+"""
+
+import os
+import logging
+from telegram import Update
+from telegram.ext import (
+    Application, CommandHandler, MessageHandler,
+    filters, ContextTypes
+)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+TOKEN = os.environ["TELEGRAM_TOKEN"]
+
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /start command."""
+    await update.message.reply_text(
+        "👋 Hi! I'm your automation bot.\n\n"
+        "Commands:\n"
+        "/help — Show available commands\n"
+        "/status — Check bot status\n"
+        "/echo &lt;text&gt; — Echo your message\n"
+    )
+
+
+async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /help command."""
+    await update.message.reply_text(
+        "Available commands:\n"
+        "• /start — Welcome message\n"
+        "• /help — This help\n"
+        "• /status — Bot status\n"
+        "• /echo &lt;text&gt; — Echo text back\n"
+        "\nSend any message and I'll respond!"
+    )
+
+
+async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /status command."""
+    await update.message.reply_text("✅ Bot is running!")
+
+
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /echo command."""
+    text = " ".join(context.args) if context.args else "Nothing to echo!"
+    await update.message.reply_text(f"🔊 {text}")
+
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle regular messages — customize this!"""
+    text = update.message.text
+    # Add your logic here: AI responses, data lookups, etc.
+    await update.message.reply_text(f"You said: {text}")
+
+
+async def error_handler(update, context: ContextTypes.DEFAULT_TYPE):
+    """Log errors."""
+    logger.error(f"Error: {context.error}", exc_info=context.error)
+
+
+def main():
+    app = Application.builder().token(TOKEN).build()
+
+    # Commands
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_cmd))
+    app.add_handler(CommandHandler("status", status))
+    app.add_handler(CommandHandler("echo", echo))
+
+    # Messages
+    app.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
+    )
+
+    # Error handler
+    app.add_error_handler(error_handler)
+
+    logger.info("🤖 Bot started!")
+    app.run_polling()
+
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+        <h2>Step 4: Run Your Bot</h2>
+<pre><code>export TELEGRAM_TOKEN="your_token_here"
+python bot.py</code></pre>
+        <p>Open Telegram, find your bot, and send <span class="inline-code">/start</span>. You should see the welcome message.</p>
+
+        <h2>Extending Your Bot</h2>
+        <p>The template above is a starting point. Here are common extensions:</p>
+
+        <h3>Add Scheduled Messages</h3>
+<pre><code>from telegram.ext import ApplicationBuilder
+import asyncio
+
+async def daily_report(context: ContextTypes.DEFAULT_TYPE):
+    """Send daily report at scheduled time."""
+    await context.bot.send_message(
+        chat_id=YOUR_CHAT_ID,
+        text="📊 Daily Report:\n• Uptime: 99.9%\n• Requests: 1,234"
+    )
+
+# In main(), after building app:
+app.job_queue.run_daily(
+    daily_report,
+    time=datetime.time(hour=9, minute=0)  # 9:00 AM
+)</code></pre>
+
+        <h3>Add Inline Keyboards</h3>
+<pre><code>from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("📊 Stats", callback_data="stats"),
+         InlineKeyboardButton("⚙️ Settings", callback_data="settings")],
+        [InlineKeyboardButton("❓ Help", callback_data="help")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text("Choose an option:", reply_markup=reply_markup)</code></pre>
+
+        <h3>Connect to an API</h3>
+<pre><code>import httpx
+
+async def weather(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Fetch weather and send to user."""
+    city = " ".join(context.args) or "London"
+    async with httpx.AsyncClient() as client:
+        r = await client.get(f"https://wttr.in/{city}?format=3")
+        await update.message.reply_text(r.text)</code></pre>
+
+        <h2>Deployment Options</h2>
+        <ol>
+            <li><strong>VPS (cheapest):</strong> Run with <span class="inline-code">nohup python bot.py &</span> or use systemd</li>
+            <li><strong>Docker:</strong> Wrap in a container for easy deployment anywhere</li>
+            <li><strong>Serverless:</strong> Use webhooks instead of polling for cloud functions</li>
+        </ol>
+
+        <div class="tip">
+            <strong>💡 Production tip:</strong> Use <span class="inline-code">systemd</span> service for auto-restart on crashes. Create <span class="inline-code">/etc/systemd/system/telegram-bot.service</span> with <span class="inline-code">Restart=always</span>.
+        </div>
+
+        <h2>Common Patterns</h2>
+        <ul>
+            <li><strong>Server monitoring:</strong> Send alerts when health checks fail</li>
+            <li><strong>Price tracking:</strong> Notify when products drop below threshold</li>
+            <li><strong>News aggregation:</strong> Summarize and deliver daily news digest</li>
+            <li><strong>Team notifications:</strong> Pipe CI/CD events to a group chat</li>
+            <li><strong>Data collection:</strong> Gather responses through conversational forms</li>
+        </ul>
+
+        <div class="cta-box">
+            <h3>Want 50+ More Automation Scripts?</h3>
+            <p>The AI Agent Toolkit includes Telegram bots, Slack integrations, web scrapers, DevOps tools, and more — all copy-paste ready.</p>
+            <a href="https://payhip.com/b/8BKSl" class="cta-btn">Get the Toolkit — $19</a>
+        </div>
+
+        <footer>
+            <p>Part of the <a href="../">AI Agent Toolkit</a> · <a href="python-automation-scripts.html">5 Python Scripts to Automate Your Workflow</a> · <a href="rag-pipeline-python.html">Build a RAG Pipeline</a></p>
+        </footer>
+    </div>
+</body>
+</html>
