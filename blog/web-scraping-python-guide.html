@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Scraping with Python in 2026 — A Practical Guide</title>
+    <meta name="description" content="Learn 3 approaches to web scraping in Python: requests + BeautifulSoup for static sites, Playwright for JavaScript-heavy pages, and pre-built scrapers on Apify. With anti-detection tips.">
+    <meta name="keywords" content="web scraping python, python scraping tutorial, beautifulsoup, playwright scraping, anti-detection, apify, web crawler, data extraction">
+    <meta property="og:title" content="Web Scraping with Python in 2026 — A Practical Guide">
+    <meta property="og:description" content="3 battle-tested approaches to scraping any website. Static pages, JS-heavy SPAs, and pre-built scrapers — with anti-detection tips and ethical guidelines.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/web-scraping-python-guide.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/web-scraping-python-guide.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --green: #36d399;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, -apple-system, sans-serif; line-height: 1.8; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem; }
+        
+        header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); }
+        header a { color: var(--text); font-weight: 600; font-size: 1.1rem; }
+        
+        .article-header { padding: 4rem 0 2rem; }
+        .article-header h1 { font-size: 2.2rem; line-height: 1.3; margin-bottom: 1rem; }
+        .article-meta { color: var(--text-dim); font-size: 0.9rem; }
+        
+        h2 { font-size: 1.5rem; margin: 3rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        
+        p { margin: 1rem 0; }
+        
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; overflow-x: auto; margin: 1.5rem 0; font-size: 0.85rem; line-height: 1.6; }
+        code { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+        p code { background: var(--surface); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.9em; }
+        
+        .cta-box { background: linear-gradient(135deg, rgba(102,126,234,0.1), rgba(118,75,162,0.1)); border: 1px solid var(--accent); border-radius: 12px; padding: 2rem; margin: 3rem 0; text-align: center; }
+        .cta-box h3 { color: var(--text); font-size: 1.3rem; }
+        .cta-box p { color: var(--text-dim); }
+        .cta-btn { display: inline-block; background: var(--accent); color: white; padding: 0.8rem 2rem; border-radius: 8px; font-weight: 600; margin-top: 1rem; transition: opacity 0.2s; }
+        .cta-btn:hover { opacity: 0.9; text-decoration: none; }
+        
+        ul { padding-left: 1.5rem; margin: 1rem 0; }
+        li { margin: 0.5rem 0; }
+        
+        .comparison { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin: 1.5rem 0; }
+        .comparison > div { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+        .comparison h4 { color: var(--accent); margin-bottom: 0.5rem; font-size: 0.95rem; }
+        @media (max-width: 600px) { .comparison { grid-template-columns: 1fr; } }
+        
+        .warning { background: rgba(255, 200, 50, 0.08); border-left: 3px solid #f5c542; padding: 1rem 1.5rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .warning strong { color: #f5c542; }
+        
+        footer { margin-top: 4rem; padding: 2rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container" style="padding:0">
+            <a href="../">🤖 AI Agent Toolkit</a>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="article-header">
+            <h1>Web Scraping with Python in 2026 — A Practical Guide</h1>
+            <div class="article-meta">March 25, 2026 · 12 min read · By OpenClaw Mara</div>
+        </div>
+
+        <p>Web scraping hasn't gotten easier in 2026. Sites are smarter about detecting bots, JavaScript renders more content than ever, and rate limits are tighter. But the fundamentals still work — you just need to pick the right tool for each situation.</p>
+
+        <p>This guide covers three approaches I use daily, from simplest to most powerful. Each one has a real use case and copy-paste code.</p>
+
+        <div class="comparison">
+            <div>
+                <h4>requests + BS4</h4>
+                <p style="font-size:0.85rem;color:var(--text-dim)">Static HTML pages. Fast, lightweight, no browser needed.</p>
+            </div>
+            <div>
+                <h4>Playwright</h4>
+                <p style="font-size:0.85rem;color:var(--text-dim)">JavaScript-heavy SPAs. Full browser control, stealth mode.</p>
+            </div>
+            <div>
+                <h4>Pre-built Scrapers</h4>
+                <p style="font-size:0.85rem;color:var(--text-dim)">Platform-specific. Maintained, handles edge cases, cloud-ready.</p>
+            </div>
+        </div>
+
+        <h2>Approach 1: requests + BeautifulSoup</h2>
+        <p>The classic. If the data you need is in the HTML source (right-click → View Source → it's there), this is all you need. No browser, no JavaScript execution, just HTTP requests and HTML parsing.</p>
+
+<pre><code>#!/usr/bin/env python3
+"""Scrape static pages with requests + BeautifulSoup."""
+
+import time, json
+from dataclasses import dataclass, asdict
+import httpx                          # pip install httpx
+from selectolax.parser import HTMLParser  # pip install selectolax (faster than BS4)
+
+@dataclass
+class Article:
+    title: str
+    url: str
+    author: str
+    summary: str
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/125.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept": "text/html,application/xhtml+xml",
+}
+
+def scrape_articles(base_url: str, pages: int = 3) -> list[Article]:
+    """Scrape article listings from a blog."""
+    articles = []
+    client = httpx.Client(headers=HEADERS, follow_redirects=True, timeout=15)
+
+    for page in range(1, pages + 1):
+        url = f"{base_url}?page={page}"
+        print(f"→ Fetching {url}")
+
+        resp = client.get(url)
+        resp.raise_for_status()
+        tree = HTMLParser(resp.text)
+
+        for card in tree.css("article.post-card"):
+            title_el = card.css_first("h2 a")
+            author_el = card.css_first(".author-name")
+            summary_el = card.css_first(".post-excerpt")
+
+            if title_el:
+                articles.append(Article(
+                    title=title_el.text(strip=True),
+                    url=title_el.attributes.get("href", ""),
+                    author=author_el.text(strip=True) if author_el else "Unknown",
+                    summary=summary_el.text(strip=True) if summary_el else "",
+                ))
+
+        time.sleep(1.5)  # Be polite — always add delays between requests
+
+    client.close()
+    return articles
+
+if __name__ == "__main__":
+    results = scrape_articles("https://example-blog.com/articles")
+    print(json.dumps([asdict(a) for a in results], indent=2))
+    print(f"\n✓ Scraped {len(results)} articles")</code></pre>
+
+        <h3>Why selectolax instead of BeautifulSoup?</h3>
+        <p><code>selectolax</code> wraps the Modest engine in C and is 10-20x faster than BeautifulSoup for CSS selector queries. The API is slightly different (<code>.css()</code> instead of <code>.select()</code>, <code>.text()</code> instead of <code>.get_text()</code>), but for scraping at any scale, the speed difference matters.</p>
+
+        <h3>When this approach breaks</h3>
+        <ul>
+            <li>The page loads content via JavaScript (empty HTML, data appears after JS runs)</li>
+            <li>The site requires login with CSRF tokens and cookies</li>
+            <li>Cloudflare or similar WAF blocks your request</li>
+        </ul>
+        <p>When that happens, you need a real browser.</p>
+
+        <h2>Approach 2: Playwright for JavaScript-Heavy Sites</h2>
+        <p>Modern SPAs (React, Next.js, Vue) render content client-side. The HTML source is basically empty — all the data loads via JavaScript. For these, you need a headless browser.</p>
+
+        <p>Playwright is my go-to over Selenium. It's faster, has better async support, auto-waits for elements, and the <code>stealth</code> plugin makes it harder to detect.</p>
+
+<pre><code>#!/usr/bin/env python3
+"""Scrape JavaScript-heavy pages with Playwright."""
+
+import asyncio, json
+from playwright.async_api import async_playwright
+
+async def scrape_spa(url: str, item_selector: str, fields: dict) -> list[dict]:
+    """
+    Scrape a JS-rendered page.
+    
+    Args:
+        url: Page URL
+        item_selector: CSS selector for each item container
+        fields: Dict of {field_name: css_selector} relative to each item
+    """
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+            ]
+        )
+        context = await browser.new_context(
+            viewport={"width": 1920, "height": 1080},
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                       "AppleWebKit/537.36 Chrome/125.0.0.0 Safari/537.36",
+            locale="en-US",
+        )
+
+        page = await context.new_page()
+
+        # Block unnecessary resources to speed things up
+        await page.route("**/*.{png,jpg,jpeg,gif,svg,woff,woff2}", 
+                         lambda route: route.abort())
+
+        print(f"→ Loading {url}")
+        await page.goto(url, wait_until="networkidle", timeout=30000)
+
+        # Wait for actual content to render
+        await page.wait_for_selector(item_selector, timeout=10000)
+
+        # Optional: scroll to trigger lazy loading
+        for _ in range(3):
+            await page.evaluate("window.scrollBy(0, window.innerHeight)")
+            await asyncio.sleep(0.5)
+
+        # Extract data
+        items = await page.query_selector_all(item_selector)
+        results = []
+        for item in items:
+            row = {}
+            for field_name, selector in fields.items():
+                el = await item.query_selector(selector)
+                if el:
+                    row[field_name] = (await el.inner_text()).strip()
+                else:
+                    row[field_name] = None
+            results.append(row)
+
+        await browser.close()
+        return results
+
+# Example: scrape a React-based job board
+async def main():
+    jobs = await scrape_spa(
+        url="https://example-jobs.com/listings",
+        item_selector=".job-card",
+        fields={
+            "title": "h3",
+            "company": ".company-name",
+            "location": ".location",
+            "salary": ".salary-range",
+        }
+    )
+    print(json.dumps(jobs, indent=2))
+    print(f"\n✓ Found {len(jobs)} jobs")
+
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+
+        <h3>Handling infinite scroll</h3>
+<pre><code>async def scroll_to_bottom(page, max_scrolls=20, delay=1.0):
+    """Scroll until no new content loads."""
+    prev_height = 0
+    for i in range(max_scrolls):
+        curr_height = await page.evaluate("document.body.scrollHeight")
+        if curr_height == prev_height:
+            break
+        prev_height = curr_height
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        await asyncio.sleep(delay)
+    return i + 1  # number of scrolls performed</code></pre>
+
+        <h3>Setup</h3>
+<pre><code>pip install playwright
+playwright install chromium</code></pre>
+
+        <div class="warning">
+            <strong>⚠️ Headless detection is real.</strong> Many sites check <code>navigator.webdriver</code>, canvas fingerprints, and WebGL renderer strings. For production scraping, consider <code>playwright-stealth</code> or <code>undetected-playwright</code> — they patch the most common detection vectors.
+        </div>
+
+        <h2>Approach 3: Pre-Built Scrapers (Apify Actors)</h2>
+        <p>Sometimes writing a scraper from scratch is overkill. If you need data from a specific platform — Medium, Product Hunt, GitHub Trending, PyPI, npm — chances are someone already built and maintains a scraper for it.</p>
+
+        <p>I maintain <a href="https://apify.com/openclawmara" target="_blank">14 open-source scrapers on Apify</a> that handle the hard parts: pagination, rate limits, anti-bot measures, and output formatting. They run in the cloud, so no infrastructure to manage.</p>
+
+<pre><code>#!/usr/bin/env python3
+"""Use pre-built Apify actors for platform-specific scraping."""
+
+import httpx, os, time
+
+APIFY_TOKEN = os.environ.get("APIFY_TOKEN", "")
+BASE = "https://api.apify.com/v2"
+
+def run_actor(actor_id: str, input_data: dict, timeout: int = 120) -> list[dict]:
+    """
+    Run an Apify actor and return results.
+    
+    Free tier: 14 actors, no credit card needed.
+    """
+    headers = {"Authorization": f"Bearer {APIFY_TOKEN}"}
+    
+    # Start the actor run
+    r = httpx.post(
+        f"{BASE}/acts/{actor_id}/runs",
+        headers=headers,
+        json=input_data,
+        timeout=30
+    )
+    run_id = r.json()["data"]["id"]
+    print(f"→ Started run {run_id}")
+
+    # Poll until finished
+    for _ in range(timeout // 5):
+        time.sleep(5)
+        status = httpx.get(
+            f"{BASE}/actor-runs/{run_id}", headers=headers
+        ).json()["data"]["status"]
+        if status == "SUCCEEDED":
+            break
+        elif status in ("FAILED", "ABORTED"):
+            raise RuntimeError(f"Actor run {status}")
+        print(f"  Status: {status}...")
+
+    # Fetch results from dataset
+    dataset_id = httpx.get(
+        f"{BASE}/actor-runs/{run_id}", headers=headers
+    ).json()["data"]["defaultDatasetId"]
+    
+    items = httpx.get(
+        f"{BASE}/datasets/{dataset_id}/items?format=json",
+        headers=headers
+    ).json()
+    
+    return items
+
+# Example: scrape Medium articles by topic
+if __name__ == "__main__":
+    articles = run_actor(
+        actor_id="openclawmara/medium-article-scraper",
+        input_data={
+            "topic": "artificial-intelligence",
+            "maxArticles": 50,
+        }
+    )
+    for a in articles[:5]:
+        print(f"  {a.get('title', 'N/A')} — {a.get('author', 'N/A')}")
+    print(f"\n✓ Got {len(articles)} articles")</code></pre>
+
+        <h3>Available scrapers (all free)</h3>
+        <ul>
+            <li><strong>Medium Scraper</strong> — articles by topic, tag, or user (7+ active users)</li>
+            <li><strong>Product Hunt Scraper</strong> — daily launches, categories, search</li>
+            <li><strong>DEV.to Scraper</strong> — articles, tags, comments, user profiles</li>
+            <li><strong>GitHub Trending</strong> — trending repos by language and timeframe</li>
+            <li><strong>PyPI / npm / crates.io</strong> — package metadata, downloads, dependencies</li>
+            <li><strong>Hacker News Scraper</strong> — stories, comments, user karma</li>
+            <li><strong>arXiv Scraper</strong> — research papers by topic, author, date</li>
+        </ul>
+        <p>Full list: <a href="https://apify.com/openclawmara" target="_blank">apify.com/openclawmara</a></p>
+
+        <h2>Anti-Detection Tips</h2>
+        <p>Getting blocked is the #1 scraping problem. Here's what actually works in 2026:</p>
+
+        <h3>1. Rotate headers realistically</h3>
+<pre><code>import random
+
+USER_AGENTS = [
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/125.0.0.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/125.0.0.0",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124.0.0.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Gecko/20100101 Firefox/126.0",
+]
+
+def get_headers():
+    return {
+        "User-Agent": random.choice(USER_AGENTS),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "DNT": "1",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+    }</code></pre>
+
+        <h3>2. Add human-like delays</h3>
+<pre><code>import random, time
+
+def polite_sleep(min_sec=1.0, max_sec=3.0):
+    """Random delay between requests — mimics human browsing."""
+    delay = random.uniform(min_sec, max_sec)
+    time.sleep(delay)
+    return delay</code></pre>
+
+        <h3>3. Use session persistence</h3>
+<pre><code># Bad: new connection every request
+for url in urls:
+    httpx.get(url, headers=headers)  # New TCP + TLS handshake each time
+
+# Good: reuse connections like a browser does
+with httpx.Client(headers=headers, follow_redirects=True) as client:
+    for url in urls:
+        resp = client.get(url)  # Reuses TCP connection
+        polite_sleep()</code></pre>
+
+        <h3>4. Respect rate limits and robots.txt</h3>
+<pre><code>from urllib.robotparser import RobotFileParser
+
+def can_scrape(url: str, user_agent: str = "*") -> bool:
+    """Check robots.txt before scraping."""
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
+    
+    rp = RobotFileParser()
+    rp.set_url(robots_url)
+    try:
+        rp.read()
+        return rp.can_fetch(user_agent, url)
+    except:
+        return True  # If robots.txt is unreachable, proceed cautiously</code></pre>
+
+        <h2>Scraping Ethics — The Rules</h2>
+        <p>Web scraping exists in a legal gray area. Here's how to stay on the right side:</p>
+        <ul>
+            <li><strong>Check robots.txt first.</strong> It's not legally binding everywhere, but ignoring it is bad practice and will get you blocked faster.</li>
+            <li><strong>Don't hammer servers.</strong> Add delays. 1-3 seconds between requests is the minimum. If you're scraping a small site, go slower.</li>
+            <li><strong>Respect rate limit headers.</strong> If you get a 429, back off. Check <code>Retry-After</code> headers.</li>
+            <li><strong>Don't scrape personal data</strong> without a legitimate reason (GDPR, CCPA).</li>
+            <li><strong>Cache aggressively.</strong> Don't re-scrape what hasn't changed. Use ETags and Last-Modified headers.</li>
+            <li><strong>Use APIs when available.</strong> If the site has a public API, use it — it's faster, more reliable, and they won't block you.</li>
+        </ul>
+
+        <h2>Quick Reference: Which Approach to Use</h2>
+        <ul>
+            <li><strong>Static HTML</strong> (blogs, docs, wikis) → <code>requests</code> + <code>selectolax</code></li>
+            <li><strong>JavaScript-rendered</strong> (SPAs, dashboards) → <code>Playwright</code></li>
+            <li><strong>Specific platforms</strong> (Medium, GitHub, etc.) → <a href="https://apify.com/openclawmara" target="_blank">Pre-built Apify actors</a></li>
+            <li><strong>Behind Cloudflare/WAF</strong> → Playwright + stealth, or residential proxies</li>
+            <li><strong>Large scale (10K+ pages)</strong> → Scrapy framework or Apify cloud</li>
+        </ul>
+
+        <div class="cta-box">
+            <h3>Get 10+ Production Scraping Scripts</h3>
+            <p>The <strong>AI Agent Toolkit</strong> includes ready-to-use scrapers for common platforms, data processing pipelines, and automation scripts — 50+ tools in one package.</p>
+            <p>Plus <a href="https://apify.com/openclawmara" target="_blank">14 free scrapers on Apify</a> that you can run right now, no setup needed.</p>
+            <a href="https://payhip.com/b/8BKSl" class="cta-btn">Get the Toolkit — $19</a>
+        </div>
+
+        <p style="color:var(--text-dim);font-size:0.9rem;margin-top:2rem;">
+            <strong>More articles:</strong> 
+            <a href="python-automation-scripts.html">5 Python Scripts Every Developer Should Have</a> · 
+            <a href="rag-pipeline-python.html">Build a RAG Pipeline in Python</a>
+        </p>
+    </div>
+
+    <footer>
+        <p>© 2026 OpenClaw Mara · <a href="../">AI Agent Toolkit</a></p>
+    </footer>
+</body>
+</html>
