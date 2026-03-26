@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Type Hints & Mypy — Static Typing for Better Code (2026)</title>
+    <meta name="description" content="Master Python type hints: basic annotations, generics, Protocol, TypeVar, Literal, overload, runtime validation with Pydantic, and mypy configuration for catching bugs before they ship.">
+    <meta name="keywords" content="python type hints, mypy, python typing, python generics, pydantic, python protocol, type annotations python, static typing python, python typevar">
+    <meta property="og:title" content="Python Type Hints & Mypy — Static Typing for Better Code (2026)">
+    <meta property="og:description" content="Type hints that actually catch bugs. From basic annotations to advanced generics, Protocols, and mypy. Real patterns, not toy examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-type-hints.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-type-hints.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Type Hints & Mypy — Static Typing for Better Code</h1>
+            <p class="meta">March 2026 · 20 min read · Python, Type Hints, Mypy, Pydantic</p>
+
+            <p>Type hints are the best thing that happened to Python since list comprehensions. They catch bugs at development time, make refactoring safe, and serve as living documentation. But most tutorials stop at <span class="inline-code">def foo(x: int) -> str</span>. This guide covers the patterns you'll actually use in production — including the tricky parts.</p>
+
+            <h2>The Basics (Quick Refresher)</h2>
+
+<pre><code># Variables
+name: str = "Alice"
+age: int = 30
+score: float = 9.5
+active: bool = True
+
+# Functions
+def greet(name: str, loud: bool = False) -> str:
+    msg = f"Hello, {name}!"
+    return msg.upper() if loud else msg
+
+# Collections (Python 3.9+, use built-in types)
+names: list[str] = ["Alice", "Bob"]
+scores: dict[str, float] = {"Alice": 9.5, "Bob": 8.2}
+coordinates: tuple[float, float] = (40.7, -74.0)
+unique_ids: set[int] = {1, 2, 3}
+
+# Optional (value or None)
+from typing import Optional
+# Python 3.10+ — use X | None instead
+def find_user(user_id: int) -> dict | None:
+    return db.get(user_id)  # might return None
+
+# Union types
+def process(value: str | int | float) -> str:
+    return str(value)</code></pre>
+
+            <div class="tip">
+                <strong>💡 Python 3.10+ simplification:</strong> Use <span class="inline-code">X | Y</span> instead of <span class="inline-code">Union[X, Y]</span> and <span class="inline-code">X | None</span> instead of <span class="inline-code">Optional[X]</span>. Cleaner and more readable.
+            </div>
+
+            <h2>Callable Types</h2>
+
+            <p>For functions as parameters — common in <a href="design-patterns-python.html">Strategy and Observer patterns</a>.</p>
+
+<pre><code>from collections.abc import Callable
+
+# Function that takes (str, int) and returns bool
+def apply_filter(
+    items: list[str],
+    predicate: Callable[[str], bool],
+) -> list[str]:
+    return [item for item in items if predicate(item)]
+
+# Usage
+long_names = apply_filter(
+    ["Al", "Alexander", "Bob", "Benjamin"],
+    lambda name: len(name) > 3,
+)
+
+# Callable with no specific signature
+from typing import Any
+def register(callback: Callable[..., Any]) -> None:
+    ...
+
+# More precise: ParamSpec (Python 3.10+)
+from typing import ParamSpec, TypeVar
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+def with_logging(fn: Callable[P, R]) -> Callable[P, R]:
+    """Decorator that preserves the wrapped function's signature."""
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        print(f"Calling {fn.__name__}")
+        return fn(*args, **kwargs)
+    return wrapper
+
+@with_logging
+def add(a: int, b: int) -> int:
+    return a + b
+
+# mypy knows add(a: int, b: int) -> int — signature preserved!</code></pre>
+
+            <h2>Generics — Write Type-Safe Reusable Code</h2>
+
+<pre><code>from typing import TypeVar, Generic
+
+T = TypeVar("T")
+
+
+class Stack(Generic[T]):
+    """Type-safe stack — Stack[int] only holds ints."""
+
+    def __init__(self) -> None:
+        self._items: list[T] = []
+
+    def push(self, item: T) -> None:
+        self._items.append(item)
+
+    def pop(self) -> T:
+        if not self._items:
+            raise IndexError("Stack is empty")
+        return self._items.pop()
+
+    def peek(self) -> T:
+        if not self._items:
+            raise IndexError("Stack is empty")
+        return self._items[-1]
+
+    def __len__(self) -> int:
+        return len(self._items)
+
+
+# Usage — mypy enforces type consistency
+int_stack: Stack[int] = Stack()
+int_stack.push(42)
+int_stack.push(17)
+value: int = int_stack.pop()  # mypy knows this is int
+
+str_stack: Stack[str] = Stack()
+str_stack.push("hello")
+# str_stack.push(42)  # mypy error: Argument 1 has incompatible type "int"</code></pre>
+
+            <h3>Bounded TypeVars</h3>
+
+<pre><code>from typing import TypeVar
+from datetime import datetime
+
+# T must be a subclass of str or int
+Sortable = TypeVar("Sortable", str, int, float)
+
+def max_value(a: Sortable, b: Sortable) -> Sortable:
+    return a if a >= b else b
+
+# Works
+max_value(10, 20)        # OK: int
+max_value("abc", "xyz")  # OK: str
+
+# Bound to a base class
+from typing import TypeVar
+
+class Animal:
+    name: str
+
+class Dog(Animal):
+    breed: str
+
+A = TypeVar("A", bound=Animal)
+
+def get_name(animal: A) -> str:
+    return animal.name  # mypy knows A has .name</code></pre>
+
+            <h2>Protocol — Structural Typing (Duck Typing with Safety)</h2>
+
+            <p>Protocol is Python's answer to interfaces — but based on structure, not inheritance. If it walks like a duck and quacks like a duck, mypy accepts it as a duck.</p>
+
+<pre><code>from typing import Protocol, runtime_checkable
+
+
+class Renderable(Protocol):
+    """Anything with a .render() -> str method."""
+    def render(self) -> str: ...
+
+
+class HTMLWidget:
+    def render(self) -> str:
+        return "&lt;div&gt;widget&lt;/div&gt;"
+
+
+class MarkdownDoc:
+    def render(self) -> str:
+        return "# Document"
+
+
+class PlainText:
+    def render(self) -> str:
+        return "Just text"
+
+
+def display(item: Renderable) -> None:
+    """Accepts ANY object with render() -> str."""
+    print(item.render())
+
+
+# All of these work — no inheritance needed!
+display(HTMLWidget())   # ✅
+display(MarkdownDoc())  # ✅
+display(PlainText())    # ✅
+# display(42)           # ❌ mypy error: int has no render()
+
+
+# Runtime checking with @runtime_checkable
+@runtime_checkable
+class Closeable(Protocol):
+    def close(self) -> None: ...
+
+import io
+f = io.StringIO()
+print(isinstance(f, Closeable))  # True — StringIO has .close()</code></pre>
+
+            <div class="tip">
+                <strong>💡 Protocol vs ABC:</strong> Use <span class="inline-code">Protocol</span> when you want structural typing (anything with the right methods works). Use <span class="inline-code">ABC</span> when you want nominal typing (must explicitly inherit). Protocol is more Pythonic for most cases.
+            </div>
+
+            <h2>TypedDict — Type-Safe Dictionaries</h2>
+
+<pre><code>from typing import TypedDict, NotRequired
+
+
+class UserConfig(TypedDict):
+    username: str
+    email: str
+    theme: NotRequired[str]           # Optional key (Python 3.11+)
+    notifications: NotRequired[bool]
+
+
+def save_config(config: UserConfig) -> None:
+    print(f"Saving config for {config['username']}")
+
+
+# ✅ Valid
+save_config({"username": "alice", "email": "a@b.com"})
+save_config({"username": "bob", "email": "b@c.com", "theme": "dark"})
+
+# ❌ mypy catches these
+# save_config({"username": "alice"})  # Missing required key 'email'
+# save_config({"username": "alice", "email": "a@b.com", "age": 30})  # Extra key
+
+
+# Nested TypedDicts
+class Address(TypedDict):
+    street: str
+    city: str
+    country: str
+
+class UserProfile(TypedDict):
+    name: str
+    address: Address
+    tags: list[str]</code></pre>
+
+            <h2>Literal, Final, and NewType</h2>
+
+<pre><code>from typing import Literal, Final, NewType
+
+# Literal — restrict to specific values
+def set_log_level(level: Literal["debug", "info", "warning", "error"]) -> None:
+    print(f"Log level: {level}")
+
+set_log_level("info")     # ✅
+# set_log_level("verbose")  # ❌ mypy error
+
+
+# Final — constant that can't be reassigned
+MAX_RETRIES: Final = 3
+API_VERSION: Final[str] = "v2"
+# MAX_RETRIES = 5  # ❌ mypy error: Cannot assign to final name
+
+
+# NewType — create distinct types from existing ones
+UserId = NewType("UserId", int)
+OrderId = NewType("OrderId", int)
+
+def get_user(user_id: UserId) -> dict:
+    return {"id": user_id}
+
+uid = UserId(42)
+oid = OrderId(42)
+
+get_user(uid)  # ✅
+# get_user(oid)  # ❌ mypy error: expected UserId, got OrderId
+# get_user(42)   # ❌ mypy error: expected UserId, got int</code></pre>
+
+            <h2>Overload — Multiple Signatures</h2>
+
+<pre><code>from typing import overload
+
+
+@overload
+def process(data: str) -> list[str]: ...
+@overload
+def process(data: bytes) -> list[bytes]: ...
+@overload
+def process(data: list[str]) -> str: ...
+
+def process(data):
+    """Implementation handles all cases."""
+    if isinstance(data, str):
+        return data.split()
+    elif isinstance(data, bytes):
+        return data.split(b" ")
+    elif isinstance(data, list):
+        return " ".join(data)
+    raise TypeError(f"Unsupported type: {type(data)}")
+
+
+# mypy knows the return types!
+words: list[str] = process("hello world")     # ✅ list[str]
+chunks: list[bytes] = process(b"hello world")  # ✅ list[bytes]
+sentence: str = process(["hello", "world"])    # ✅ str</code></pre>
+
+            <h2>Pydantic — Runtime Type Validation</h2>
+
+            <p>Type hints alone are only checked by mypy (at dev time). Pydantic validates at runtime — crucial for API input, config files, and external data. See our <a href="fastapi-rest-api.html">FastAPI guide</a> for Pydantic in APIs.</p>
+
+<pre><code>from pydantic import BaseModel, Field, field_validator, model_validator
+from datetime import datetime
+
+
+class CreateUser(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    email: str = Field(..., pattern=r"^[\w.-]+@[\w.-]+\.\w+$")
+    age: int = Field(..., ge=0, le=150)
+    role: Literal["admin", "user", "viewer"] = "user"
+    tags: list[str] = []
+
+    @field_validator("name")
+    @classmethod
+    def name_must_be_titlecase(cls, v: str) -> str:
+        return v.strip().title()
+
+    @field_validator("tags")
+    @classmethod
+    def validate_tags(cls, v: list[str]) -> list[str]:
+        return [tag.lower().strip() for tag in v if tag.strip()]
+
+
+# ✅ Valid — auto-coerces and validates
+user = CreateUser(
+    name="  alice  ",
+    email="alice@example.com",
+    age=30,
+    tags=["Python", " FastAPI ", ""],
+)
+print(user.name)   # "Alice" (stripped + titlecased)
+print(user.tags)   # ["python", "fastapi"] (lowercased, empty removed)
+
+# ❌ Raises ValidationError
+try:
+    CreateUser(name="", email="not-an-email", age=-5)
+except Exception as e:
+    print(e)
+    # name: String should have at least 1 character
+    # email: String should match pattern ...
+    # age: Input should be greater than or equal to 0</code></pre>
+
+            <h3>Model composition</h3>
+
+<pre><code>class Address(BaseModel):
+    street: str
+    city: str
+    country: str = "US"
+
+class Company(BaseModel):
+    name: str
+    founded: int
+
+class Employee(BaseModel):
+    name: str
+    address: Address
+    company: Company
+    start_date: datetime
+
+# Pydantic handles nested validation + JSON serialization
+emp = Employee(
+    name="Bob",
+    address={"street": "123 Main St", "city": "NYC"},  # dict auto-parsed
+    company={"name": "Acme", "founded": 2020},
+    start_date="2026-01-15T09:00:00",  # string auto-parsed to datetime
+)
+
+print(emp.model_dump_json(indent=2))
+# Full JSON with nested objects, dates as ISO strings</code></pre>
+
+            <h2>Mypy Configuration</h2>
+
+<pre><code># pyproject.toml — recommended mypy config
+[tool.mypy]
+python_version = "3.12"
+strict = true                    # Enable all strict checks
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true     # Every function must have type hints
+disallow_any_generics = true     # No bare list, dict — must be list[int], dict[str, int]
+check_untyped_defs = true
+no_implicit_optional = true      # def f(x: str = None) is an error — use str | None
+
+# Per-module overrides
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false    # Tests can be less strict
+
+[[tool.mypy.overrides]]
+module = "third_party_lib.*"
+ignore_missing_imports = true    # No stubs available</code></pre>
+
+<pre><code># Run mypy
+pip install mypy
+
+# Check a file
+mypy app/main.py
+
+# Check entire project
+mypy app/
+
+# With useful flags
+mypy app/ --show-error-codes --pretty
+
+# Example output:
+# app/service.py:42: error: Argument 1 to "process" has
+#   incompatible type "int"; expected "str"  [arg-type]
+# app/service.py:55: error: Missing return statement  [return]</code></pre>
+
+            <h3>Common mypy errors and fixes</h3>
+
+<pre><code># 1. "Item X has no attribute Y" — narrow the type
+def handle(value: str | int) -> str:
+    # ❌ value.upper()  — int has no .upper()
+    if isinstance(value, str):
+        return value.upper()  # ✅ mypy knows it's str here
+    return str(value)
+
+# 2. "Incompatible return type" — check all paths
+def find(items: list[str], target: str) -> int:
+    for i, item in enumerate(items):
+        if item == target:
+            return i
+    return -1  # ✅ Don't forget the else path
+
+# 3. "Cannot infer type" — add annotation
+# ❌ data = []
+data: list[str] = []  # ✅
+
+# 4. "Missing type annotation for **kwargs"
+def config(**kwargs: str) -> None:  # ✅ All kwargs are str
+    ...
+
+# 5. Ignoring a line (last resort)
+result = sketchy_function()  # type: ignore[no-untyped-call]</code></pre>
+
+            <h2>Type Hints Cheat Sheet</h2>
+
+            <table>
+                <tr><th>Type</th><th>Example</th><th>Since</th></tr>
+                <tr><td>Basic</td><td><span class="inline-code">int, str, float, bool, bytes, None</span></td><td>3.5</td></tr>
+                <tr><td>List</td><td><span class="inline-code">list[str]</span></td><td>3.9</td></tr>
+                <tr><td>Dict</td><td><span class="inline-code">dict[str, int]</span></td><td>3.9</td></tr>
+                <tr><td>Tuple (fixed)</td><td><span class="inline-code">tuple[str, int, float]</span></td><td>3.9</td></tr>
+                <tr><td>Tuple (variable)</td><td><span class="inline-code">tuple[str, ...]</span></td><td>3.9</td></tr>
+                <tr><td>Set</td><td><span class="inline-code">set[int]</span></td><td>3.9</td></tr>
+                <tr><td>Union</td><td><span class="inline-code">str | int</span></td><td>3.10</td></tr>
+                <tr><td>Optional</td><td><span class="inline-code">str | None</span></td><td>3.10</td></tr>
+                <tr><td>Callable</td><td><span class="inline-code">Callable[[int, str], bool]</span></td><td>3.9</td></tr>
+                <tr><td>TypeVar</td><td><span class="inline-code">T = TypeVar("T")</span></td><td>3.5</td></tr>
+                <tr><td>Protocol</td><td><span class="inline-code">class P(Protocol): ...</span></td><td>3.8</td></tr>
+                <tr><td>TypedDict</td><td><span class="inline-code">class TD(TypedDict): ...</span></td><td>3.8</td></tr>
+                <tr><td>Literal</td><td><span class="inline-code">Literal["a", "b"]</span></td><td>3.8</td></tr>
+                <tr><td>Final</td><td><span class="inline-code">MAX: Final = 100</span></td><td>3.8</td></tr>
+                <tr><td>NewType</td><td><span class="inline-code">UserId = NewType("UserId", int)</span></td><td>3.5</td></tr>
+                <tr><td>Self</td><td><span class="inline-code">def copy(self) -> Self</span></td><td>3.11</td></tr>
+                <tr><td>ParamSpec</td><td><span class="inline-code">P = ParamSpec("P")</span></td><td>3.10</td></tr>
+                <tr><td>type statement</td><td><span class="inline-code">type Vector = list[float]</span></td><td>3.12</td></tr>
+            </table>
+
+            <div class="tip">
+                <strong>🎯 Adoption strategy:</strong> Don't type-hint your entire codebase at once. Start with public APIs and function signatures. Add <span class="inline-code">mypy</span> to CI with <span class="inline-code">--strict</span> on new files only. Gradually expand coverage.
+            </div>
+
+            <div class="cta">
+                <p>🚀 Want production Python templates with full type coverage and mypy CI setup?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI</a> — Pydantic models and type-safe API endpoints</li>
+                <li><a href="design-patterns-python.html">Python Design Patterns</a> — Protocol and generics in pattern implementations</li>
+                <li><a href="testing-python.html">Python Testing Guide</a> — type-aware testing with mypy and pytest</li>
+                <li><a href="python-decorators-advanced.html">Python Decorators Deep Dive</a> — ParamSpec for type-safe decorators</li>
+                <li><a href="python-packaging.html">Python Packaging Guide</a> — ship type stubs with your package</li>
+            </ul>
+
+            <p>Need help adding type safety to your Python project? I build well-typed APIs, automation tools, and data pipelines. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
