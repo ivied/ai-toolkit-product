@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Decorators Deep Dive — Beyond the Basics (2026)</title>
+    <meta name="description" content="Master Python decorators: closures, functools.wraps, parametrized decorators, class decorators, decorator stacking, real-world patterns for caching, rate limiting, auth, validation, and plugin systems.">
+    <meta name="keywords" content="python decorators, decorator pattern, functools wraps, parametrized decorator, class decorator, python metaprogramming, decorator tutorial 2026, python advanced">
+    <meta property="og:title" content="Python Decorators Deep Dive — Beyond the Basics (2026)">
+    <meta property="og:description" content="Everything about Python decorators: from closures to production patterns. Rate limiting, caching, auth guards, validation, and plugin registries.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-decorators-advanced.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-decorators-advanced.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Decorators Deep Dive — Beyond the Basics</h1>
+            <p class="meta">March 2026 · 18 min read · Python, Metaprogramming, Advanced</p>
+
+            <p>You know <span class="inline-code">@decorator</span> syntax. But do you know how to build decorators that accept arguments? That work on both sync and async functions? That preserve type hints for your IDE? This guide takes you from "I kinda get decorators" to "I build production decorator libraries."</p>
+
+            <h2>How Decorators Actually Work</h2>
+
+            <p>A decorator is just a function that takes a function and returns a function. The <span class="inline-code">@</span> syntax is sugar:</p>
+
+<pre><code># These are identical:
+@my_decorator
+def greet():
+    print("Hello")
+
+# Is the same as:
+def greet():
+    print("Hello")
+greet = my_decorator(greet)</code></pre>
+
+            <p>Understanding this equivalence is the key to everything that follows.</p>
+
+            <h3>The closure pattern</h3>
+
+<pre><code>import functools
+
+def simple_logger(fn):
+    """Log every call to the decorated function."""
+    @functools.wraps(fn)  # preserve __name__, __doc__, __annotations__
+    def wrapper(*args, **kwargs):
+        print(f"→ Calling {fn.__name__}({args}, {kwargs})")
+        result = fn(*args, **kwargs)
+        print(f"← {fn.__name__} returned {result!r}")
+        return result
+    return wrapper
+
+
+@simple_logger
+def add(a: int, b: int) -> int:
+    """Add two numbers."""
+    return a + b
+
+add(3, 4)
+# → Calling add((3, 4), {})
+# ← add returned 7
+
+# Thanks to @functools.wraps:
+print(add.__name__)  # "add" (not "wrapper")
+print(add.__doc__)   # "Add two numbers."</code></pre>
+
+            <div class="tip">
+                <strong>🚨 Always use <span class="inline-code">@functools.wraps(fn)</span>.</strong> Without it, the decorated function loses its name, docstring, and type annotations. This breaks help(), debugging, and documentation tools.
+            </div>
+
+            <h2>Parametrized Decorators (Decorators with Arguments)</h2>
+
+            <p>This is where most tutorials lose people. When a decorator takes arguments, you need an extra layer of nesting:</p>
+
+<pre><code>import functools
+import time
+
+
+def retry(max_attempts: int = 3, delay: float = 1.0, exceptions: tuple = (Exception,)):
+    """
+    Retry decorator with configurable attempts, delay, and exception types.
+
+    Usage:
+        @retry(max_attempts=5, delay=0.5)
+        def flaky_call(): ...
+
+        @retry()          # uses defaults
+        def another(): ...
+    """
+    def decorator(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            last_error = None
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return fn(*args, **kwargs)
+                except exceptions as e:
+                    last_error = e
+                    if attempt < max_attempts:
+                        wait = delay * (2 ** (attempt - 1))  # exponential backoff
+                        print(f"⚠ {fn.__name__} attempt {attempt}/{max_attempts} "
+                              f"failed: {e}. Retrying in {wait:.1f}s...")
+                        time.sleep(wait)
+            raise last_error
+        return wrapper
+    return decorator
+
+
+@retry(max_attempts=4, delay=0.5, exceptions=(ConnectionError, TimeoutError))
+def fetch_data(url: str) -> dict:
+    import random
+    if random.random() < 0.7:
+        raise ConnectionError("Server unreachable")
+    return {"status": "ok"}</code></pre>
+
+            <h3>The flexible decorator pattern</h3>
+
+            <p>Want a decorator that works both with and without parentheses? (<span class="inline-code">@deco</span> and <span class="inline-code">@deco(args)</span>)</p>
+
+<pre><code>import functools
+
+
+def flexible_decorator(fn=None, *, prefix="LOG", include_args=True):
+    """
+    Works as both @flexible_decorator and @flexible_decorator(prefix="DBG").
+    """
+    def decorator(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            if include_args:
+                print(f"[{prefix}] {fn.__name__}({args}, {kwargs})")
+            else:
+                print(f"[{prefix}] {fn.__name__}()")
+            return fn(*args, **kwargs)
+        return wrapper
+
+    if fn is not None:
+        # Called as @flexible_decorator (no parentheses)
+        return decorator(fn)
+    # Called as @flexible_decorator(...) (with parentheses)
+    return decorator
+
+
+@flexible_decorator
+def task_a():
+    return "done"
+
+@flexible_decorator(prefix="DEBUG", include_args=False)
+def task_b(x, y):
+    return x + y
+
+task_a()       # [LOG] task_a((), {})
+task_b(1, 2)   # [DEBUG] task_b()</code></pre>
+
+            <h2>Class-Based Decorators</h2>
+
+            <p>For complex decorators with state, use a class with <span class="inline-code">__call__</span>:</p>
+
+<pre><code>import functools
+import time
+from collections import defaultdict
+
+
+class RateLimiter:
+    """
+    Rate limit function calls per key.
+
+    Usage:
+        @RateLimiter(calls=5, period=60)
+        def api_call(user_id: str): ...
+    """
+
+    def __init__(self, calls: int = 10, period: float = 60.0, key_fn=None):
+        self.calls = calls
+        self.period = period
+        self.key_fn = key_fn  # function to extract rate limit key from args
+        self._timestamps: dict[str, list[float]] = defaultdict(list)
+
+    def __call__(self, fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            # Determine rate limit key
+            if self.key_fn:
+                key = self.key_fn(*args, **kwargs)
+            else:
+                key = "global"
+
+            now = time.time()
+            # Clean old timestamps
+            self._timestamps[key] = [
+                t for t in self._timestamps[key]
+                if now - t < self.period
+            ]
+
+            if len(self._timestamps[key]) >= self.calls:
+                oldest = self._timestamps[key][0]
+                wait = self.period - (now - oldest)
+                raise RuntimeError(
+                    f"Rate limit exceeded for '{key}'. "
+                    f"Try again in {wait:.1f}s"
+                )
+
+            self._timestamps[key].append(now)
+            return fn(*args, **kwargs)
+
+        wrapper.limiter = self  # expose for testing/reset
+        return wrapper
+
+
+@RateLimiter(calls=3, period=10, key_fn=lambda user_id: user_id)
+def send_message(user_id: str, text: str):
+    print(f"📨 {user_id}: {text}")
+
+send_message("alice", "Hello!")     # ✓
+send_message("alice", "How are you?")  # ✓
+send_message("bob", "Hi!")          # ✓ (different key)
+send_message("alice", "Again!")     # ✓
+# send_message("alice", "Too many!") # ✗ RuntimeError: Rate limit exceeded</code></pre>
+
+            <h2>Async-Aware Decorators</h2>
+
+            <p>Modern Python code mixes sync and async. Your decorators should handle both. See our <a href="async-python-guide.html">async programming guide</a> for more on asyncio.</p>
+
+<pre><code>import functools
+import asyncio
+import inspect
+import time
+
+
+def timing(fn):
+    """
+    Timing decorator that works with both sync and async functions.
+    """
+    if inspect.iscoroutinefunction(fn):
+        @functools.wraps(fn)
+        async def async_wrapper(*args, **kwargs):
+            start = time.perf_counter()
+            result = await fn(*args, **kwargs)
+            elapsed = time.perf_counter() - start
+            print(f"⏱ {fn.__name__}: {elapsed:.3f}s (async)")
+            return result
+        return async_wrapper
+    else:
+        @functools.wraps(fn)
+        def sync_wrapper(*args, **kwargs):
+            start = time.perf_counter()
+            result = fn(*args, **kwargs)
+            elapsed = time.perf_counter() - start
+            print(f"⏱ {fn.__name__}: {elapsed:.3f}s")
+            return result
+        return sync_wrapper
+
+
+@timing
+def compute(n: int) -> int:
+    return sum(i * i for i in range(n))
+
+@timing
+async def fetch(url: str) -> str:
+    await asyncio.sleep(0.1)  # simulate network
+    return f"data from {url}"
+
+compute(1_000_000)  # ⏱ compute: 0.045s
+
+# asyncio.run(fetch("https://api.example.com"))
+# ⏱ fetch: 0.101s (async)</code></pre>
+
+            <h2>Validation Decorators</h2>
+
+            <p>Enforce constraints on function inputs without cluttering the function body:</p>
+
+<pre><code>import functools
+import inspect
+
+
+def validate(**validators):
+    """
+    Validate function arguments with custom rules.
+
+    Usage:
+        @validate(age=lambda x: 0 < x < 150, name=lambda x: len(x) > 0)
+        def create_user(name: str, age: int): ...
+    """
+    def decorator(fn):
+        sig = inspect.signature(fn)
+
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            # Bind arguments to parameter names
+            bound = sig.bind(*args, **kwargs)
+            bound.apply_defaults()
+
+            for param_name, check_fn in validators.items():
+                if param_name in bound.arguments:
+                    value = bound.arguments[param_name]
+                    if not check_fn(value):
+                        raise ValueError(
+                            f"Validation failed for '{param_name}': "
+                            f"got {value!r}"
+                        )
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def type_check(fn):
+    """Enforce type annotations at runtime."""
+    hints = fn.__annotations__
+    sig = inspect.signature(fn)
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        bound = sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+
+        for name, value in bound.arguments.items():
+            if name in hints and hints[name] is not inspect.Parameter.empty:
+                expected = hints[name]
+                if not isinstance(value, expected):
+                    raise TypeError(
+                        f"'{name}' expected {expected.__name__}, "
+                        f"got {type(value).__name__}"
+                    )
+
+        result = fn(*args, **kwargs)
+
+        if "return" in hints:
+            expected = hints["return"]
+            if not isinstance(result, expected):
+                raise TypeError(
+                    f"Return expected {expected.__name__}, "
+                    f"got {type(result).__name__}"
+                )
+        return result
+    return wrapper
+
+
+@validate(
+    age=lambda x: 0 < x < 150,
+    email=lambda x: "@" in x and "." in x,
+)
+@type_check
+def register(name: str, email: str, age: int) -> dict:
+    return {"name": name, "email": email, "age": age}
+
+register("Alice", "alice@example.com", 30)  # ✓
+# register("Bob", "invalid", 25)            # ValueError: Validation failed
+# register("Eve", "eve@test.com", "old")    # TypeError: 'age' expected int</code></pre>
+
+            <h2>Plugin Registry Decorator</h2>
+
+            <p>Build extensible systems where plugins register themselves:</p>
+
+<pre><code>class PluginRegistry:
+    """Auto-register plugins with decorators."""
+
+    def __init__(self):
+        self._plugins: dict[str, type] = {}
+
+    def register(self, name: str = None):
+        """Decorator to register a plugin class."""
+        def decorator(cls):
+            plugin_name = name or cls.__name__.lower()
+            if plugin_name in self._plugins:
+                raise ValueError(f"Plugin '{plugin_name}' already registered")
+            self._plugins[plugin_name] = cls
+            return cls
+        return decorator
+
+    def get(self, name: str):
+        if name not in self._plugins:
+            available = ", ".join(self._plugins.keys())
+            raise KeyError(f"Unknown plugin: '{name}'. Available: {available}")
+        return self._plugins[name]
+
+    def create(self, name: str, **kwargs):
+        cls = self.get(name)
+        return cls(**kwargs)
+
+    def list(self) -> list[str]:
+        return list(self._plugins.keys())
+
+
+# --- Usage ---
+exporters = PluginRegistry()
+
+
+@exporters.register("csv")
+class CsvExporter:
+    def __init__(self, delimiter=","):
+        self.delimiter = delimiter
+
+    def export(self, data: list[dict]) -> str:
+        if not data:
+            return ""
+        headers = list(data[0].keys())
+        lines = [self.delimiter.join(headers)]
+        for row in data:
+            lines.append(self.delimiter.join(str(row.get(h, "")) for h in headers))
+        return "\n".join(lines)
+
+
+@exporters.register("json")
+class JsonExporter:
+    def __init__(self, indent=2):
+        self.indent = indent
+
+    def export(self, data: list[dict]) -> str:
+        import json
+        return json.dumps(data, indent=self.indent)
+
+
+@exporters.register("markdown")
+class MarkdownExporter:
+    def export(self, data: list[dict]) -> str:
+        if not data:
+            return ""
+        headers = list(data[0].keys())
+        lines = [" | ".join(headers), " | ".join("---" for _ in headers)]
+        for row in data:
+            lines.append(" | ".join(str(row.get(h, "")) for h in headers))
+        return "\n".join(lines)
+
+
+# Dynamic dispatch
+data = [{"name": "Alice", "score": 95}, {"name": "Bob", "score": 87}]
+
+for fmt in exporters.list():
+    exporter = exporters.create(fmt)
+    print(f"\n--- {fmt} ---")
+    print(exporter.export(data))</code></pre>
+
+            <h2>Memoization with LRU Cache</h2>
+
+            <p>Python's standard library includes production-grade memoization:</p>
+
+<pre><code>from functools import lru_cache, cache
+import time
+
+
+# @cache — unlimited cache (Python 3.9+), same as @lru_cache(maxsize=None)
+@cache
+def fibonacci(n: int) -> int:
+    if n < 2:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+start = time.perf_counter()
+result = fibonacci(100)
+print(f"fib(100) = {result} in {time.perf_counter() - start:.6f}s")
+# fib(100) = 354224848179261915075 in 0.000042s
+
+print(fibonacci.cache_info())
+# CacheInfo(hits=98, misses=101, maxsize=None, currsize=101)
+
+
+# @lru_cache — bounded cache with eviction
+@lru_cache(maxsize=256)
+def expensive_query(user_id: int, include_details: bool = False) -> dict:
+    """Simulates a slow database query."""
+    time.sleep(0.01)  # 10ms "query"
+    return {"id": user_id, "details": include_details}
+
+# First call: slow (cache miss)
+expensive_query(42, include_details=True)
+
+# Second call: instant (cache hit)
+expensive_query(42, include_details=True)
+
+# Clear cache when data changes
+expensive_query.cache_clear()</code></pre>
+
+            <div class="tip">
+                <strong>⚠️ Cache gotcha:</strong> <span class="inline-code">@lru_cache</span> uses arguments as cache keys. Mutable arguments (lists, dicts) will raise <span class="inline-code">TypeError</span>. Convert to tuples or frozensets first, or build a custom cache like the one in our <a href="design-patterns-python.html">design patterns guide</a>.
+            </div>
+
+            <h2>Decorator Stacking — Order Matters</h2>
+
+<pre><code># Decorators apply bottom-up (closest to function first):
+@timing          # 3rd: wraps the retried+cached function
+@retry(3)        # 2nd: wraps the cached function
+@cache           # 1st: wraps the original function
+def fetch_user(user_id: int):
+    ...
+
+# Equivalent to:
+# fetch_user = timing(retry(3)(cache(fetch_user)))
+
+# Execution order is top-down:
+# 1. timing starts timer
+# 2. retry catches errors
+# 3. cache checks/stores result
+# 4. original function runs (on cache miss)</code></pre>
+
+            <h2>Debugging Decorated Functions</h2>
+
+<pre><code># Problem: decorators hide the original function
+@retry(max_attempts=3, delay=0.1)
+def process(data):
+    return data
+
+# functools.wraps preserves metadata, but you might need the original:
+print(process.__name__)      # "process" ✓
+print(process.__wrapped__)   # &lt;function process at 0x...&gt; (the original!)
+
+# Call the original (skip decorator):
+process.__wrapped__(data)
+
+# In pytest, you can test the unwrapped function:
+def test_process_logic():
+    result = process.__wrapped__({"key": "value"})
+    assert result == {"key": "value"}</code></pre>
+
+            <h2>Production Decorator Checklist</h2>
+
+            <ul>
+                <li><strong>Always use <span class="inline-code">@functools.wraps(fn)</span></strong> — preserves metadata</li>
+                <li><strong>Accept <span class="inline-code">*args, **kwargs</span></strong> — don't restrict the decorated function's signature</li>
+                <li><strong>Return the result</strong> — forgetting <span class="inline-code">return fn(*args, **kwargs)</span> is a common bug</li>
+                <li><strong>Handle async</strong> — check <span class="inline-code">inspect.iscoroutinefunction</span> if your decorator might wrap async code</li>
+                <li><strong>Expose internals</strong> — attach state/config to <span class="inline-code">wrapper</span> for testing (e.g., <span class="inline-code">wrapper.cache</span>, <span class="inline-code">wrapper.limiter</span>)</li>
+                <li><strong>Document the contract</strong> — what does the decorator add? What side effects?</li>
+                <li><strong>Don't swallow exceptions</strong> — catch only what you need, re-raise everything else</li>
+                <li><strong>Test both with and without</strong> — test the decorator's behavior AND the underlying function</li>
+            </ul>
+
+            <div class="cta">
+                <p>🚀 Production-ready decorators, utility functions, and automation scripts?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="design-patterns-python.html">Python Design Patterns — Write Clean, Maintainable Code</a></li>
+                <li><a href="async-python-guide.html">Python Async Programming — asyncio, Tasks & Concurrency</a></li>
+                <li><a href="testing-python.html">Python Testing Guide — pytest, Mocking & CI Integration</a></li>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI</a> — dependency injection uses decorator-like patterns</li>
+                <li><a href="python-logging-monitoring.html">Python Logging & Monitoring</a> — timing and logging decorators in production</li>
+            </ul>
+
+            <p>Need advanced Python tools or custom decorators for your project? <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
