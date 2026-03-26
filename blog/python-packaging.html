@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Packaging — Build & Distribute Your Own Library (2026)</title>
+    <meta name="description" content="Complete guide to packaging Python projects. pyproject.toml, setuptools, Poetry, building wheels, publishing to PyPI, versioning, dependencies, and CI/CD for automated releases.">
+    <meta name="keywords" content="python packaging, pyproject.toml, setuptools, poetry, pypi, python library, python wheel, python distribution, pip install, python package 2026">
+    <meta property="og:title" content="Python Packaging — Build & Distribute Your Own Library (2026)">
+    <meta property="og:description" content="From script to installable package: pyproject.toml, build tools, PyPI publishing, versioning, and CI/CD releases.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-packaging.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-packaging.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Packaging — Build & Distribute Your Own Library</h1>
+            <p class="meta">March 2026 · 18 min read · Python, Packaging, PyPI, DevOps</p>
+
+            <p>You've written a useful Python module. Now you want others to install it with <span class="inline-code">pip install your-package</span>. This guide takes you from a loose collection of scripts to a properly packaged, versioned, and published Python library — following 2026 best practices.</p>
+
+            <h2>Modern Python Packaging (The Short Version)</h2>
+
+            <p>The packaging ecosystem has simplified dramatically. Here's what you need to know in 2026:</p>
+
+            <ul>
+                <li><strong>pyproject.toml</strong> — the single config file (replaces setup.py, setup.cfg, MANIFEST.in)</li>
+                <li><strong>Build backends</strong> — setuptools (default), Hatchling, Flit, PDM, or Poetry</li>
+                <li><strong>python -m build</strong> — creates sdist + wheel</li>
+                <li><strong>twine upload</strong> — publishes to PyPI</li>
+            </ul>
+
+            <div class="tip">
+                <strong>💡 Rule of thumb:</strong> If you're starting fresh, use <span class="inline-code">pyproject.toml</span> with setuptools or Hatchling. Skip <span class="inline-code">setup.py</span> — it's legacy.
+            </div>
+
+            <h2>Project Structure</h2>
+
+            <h3>The src layout (recommended)</h3>
+
+<pre><code>my-awesome-lib/
+├── src/
+│   └── awesome/
+│       ├── __init__.py
+│       ├── core.py
+│       ├── utils.py
+│       └── cli.py
+├── tests/
+│   ├── __init__.py
+│   ├── test_core.py
+│   └── test_utils.py
+├── pyproject.toml
+├── README.md
+├── LICENSE
+└── CHANGELOG.md</code></pre>
+
+            <p>Why <span class="inline-code">src/</span> layout? It forces you to install the package before testing — catching import issues that flat layouts hide. The Python Packaging Authority (PyPA) recommends it.</p>
+
+            <h3>The flat layout (simpler, also fine)</h3>
+
+<pre><code>my-awesome-lib/
+├── awesome/
+│   ├── __init__.py
+│   ├── core.py
+│   └── utils.py
+├── tests/
+├── pyproject.toml
+└── README.md</code></pre>
+
+            <h2>pyproject.toml — The One Config File</h2>
+
+            <h3>With setuptools (most common)</h3>
+
+<pre><code>[build-system]
+requires = ["setuptools>=75.0", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "awesome-lib"
+version = "0.1.0"
+description = "A genuinely awesome Python library"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Your Name", email = "you@example.com"},
+]
+keywords = ["automation", "utilities", "awesome"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+]
+
+# Runtime dependencies
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+]
+
+[project.urls]
+Homepage = "https://github.com/you/awesome-lib"
+Documentation = "https://awesome-lib.readthedocs.io"
+Repository = "https://github.com/you/awesome-lib"
+Changelog = "https://github.com/you/awesome-lib/blob/main/CHANGELOG.md"
+
+# CLI entry point (optional)
+[project.scripts]
+awesome = "awesome.cli:main"
+
+# Package discovery
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# Tool configs (all in one file!)
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true</code></pre>
+
+            <h3>With Hatchling (modern alternative)</h3>
+
+<pre><code>[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "awesome-lib"
+dynamic = ["version"]
+# ... same [project] section as above ...
+
+[tool.hatch.version]
+path = "src/awesome/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/awesome"]</code></pre>
+
+            <h2>Writing Your Package</h2>
+
+            <h3>__init__.py — public API</h3>
+
+<pre><code># src/awesome/__init__.py
+"""Awesome Library — genuinely useful utilities."""
+
+__version__ = "0.1.0"
+
+# Public API — what users get with `from awesome import ...`
+from .core import transform, validate, process
+from .utils import retry, timer, chunk
+
+__all__ = [
+    "transform",
+    "validate",
+    "process",
+    "retry",
+    "timer",
+    "chunk",
+    "__version__",
+]</code></pre>
+
+            <h3>Core module</h3>
+
+<pre><code># src/awesome/core.py
+"""Core functionality."""
+
+from typing import Any, Callable
+from pydantic import BaseModel, ValidationError
+
+
+class TransformResult(BaseModel):
+    """Result of a transformation."""
+    input_count: int
+    output_count: int
+    errors: list[str] = []
+
+
+def transform(
+    data: list[dict],
+    fn: Callable[[dict], dict],
+    skip_errors: bool = False,
+) -> tuple[list[dict], TransformResult]:
+    """Apply a transformation function to each record.
+
+    Args:
+        data: Input records.
+        fn: Transformation function (dict -> dict).
+        skip_errors: If True, skip failed records instead of raising.
+
+    Returns:
+        Tuple of (transformed records, result summary).
+
+    Example:
+        >>> records = [{"name": "alice"}, {"name": "bob"}]
+        >>> output, result = transform(records, lambda r: {**r, "name": r["name"].upper()})
+        >>> output[0]["name"]
+        'ALICE'
+    """
+    output = []
+    errors = []
+
+    for i, record in enumerate(data):
+        try:
+            output.append(fn(record))
+        except Exception as e:
+            if skip_errors:
+                errors.append(f"Record {i}: {e}")
+            else:
+                raise
+
+    result = TransformResult(
+        input_count=len(data),
+        output_count=len(output),
+        errors=errors,
+    )
+    return output, result</code></pre>
+
+            <h3>CLI entry point</h3>
+
+<pre><code># src/awesome/cli.py
+"""Command-line interface."""
+
+import argparse
+import json
+import sys
+
+from . import __version__
+from .core import transform
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="awesome",
+        description="Awesome data transformation CLI",
+    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument("input", help="Input JSON file (- for stdin)")
+    parser.add_argument("-o", "--output", default="-", help="Output file (default: stdout)")
+
+    args = parser.parse_args()
+
+    # Read input
+    if args.input == "-":
+        data = json.load(sys.stdin)
+    else:
+        with open(args.input) as f:
+            data = json.load(f)
+
+    # Process
+    output, result = transform(data, lambda r: r)  # identity transform as example
+    print(f"Processed {result.input_count} records → {result.output_count} output",
+          file=sys.stderr)
+
+    # Write output
+    if args.output == "-":
+        json.dump(output, sys.stdout, indent=2)
+    else:
+        with open(args.output, "w") as f:
+            json.dump(output, f, indent=2)
+
+
+if __name__ == "__main__":
+    main()</code></pre>
+
+            <p>After installing, users can run <span class="inline-code">awesome input.json -o output.json</span> directly. For more on building CLI tools, see our <a href="cli-tool-python.html">CLI tool guide</a>.</p>
+
+            <h2>Building Your Package</h2>
+
+<pre><code># Install build tool
+pip install build
+
+# Build sdist + wheel
+python -m build
+
+# Output:
+# dist/
+#   awesome_lib-0.1.0.tar.gz     (sdist — source)
+#   awesome_lib-0.1.0-py3-none-any.whl  (wheel — binary)</code></pre>
+
+            <div class="tip">
+                <strong>💡 What's a wheel?</strong> A <span class="inline-code">.whl</span> file is a pre-built package — no compilation step during install. It's a zip file with a specific naming convention: <span class="inline-code">{name}-{version}-{python}-{abi}-{platform}.whl</span>. Pure Python packages use <span class="inline-code">py3-none-any</span> (works everywhere).
+            </div>
+
+            <h3>Test locally before publishing</h3>
+
+<pre><code># Install in development mode (editable)
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Check the built package
+pip install dist/awesome_lib-0.1.0-py3-none-any.whl --force-reinstall
+
+# Verify it works
+python -c "import awesome; print(awesome.__version__)"
+awesome --version</code></pre>
+
+            <h2>Publishing to PyPI</h2>
+
+            <h3>First-time setup</h3>
+
+<pre><code># 1. Create account at https://pypi.org/account/register/
+# 2. Enable 2FA (required since 2024)
+# 3. Create API token at https://pypi.org/manage/account/token/
+
+# Install twine
+pip install twine
+
+# Test on TestPyPI first!
+twine upload --repository testpypi dist/*
+# Enter: __token__ as username, your TestPyPI token as password
+
+# Verify on TestPyPI
+pip install --index-url https://test.pypi.org/simple/ awesome-lib
+
+# If everything works — publish for real
+twine upload dist/*</code></pre>
+
+            <h3>Using a .pypirc file</h3>
+
+<pre><code># ~/.pypirc — save your tokens (chmod 600!)
+[distutils]
+index-servers =
+    pypi
+    testpypi
+
+[pypi]
+username = __token__
+password = pypi-AgEI...your_token...
+
+[testpypi]
+repository = https://test.pypi.org/legacy/
+username = __token__
+password = pypi-AgEI...your_test_token...</code></pre>
+
+            <h2>Versioning</h2>
+
+            <h3>Semantic versioning</h3>
+
+<pre><code># MAJOR.MINOR.PATCH
+# 0.1.0 → initial development
+# 0.2.0 → new feature (minor)
+# 0.2.1 → bug fix (patch)
+# 1.0.0 → first stable release
+# 1.1.0 → new feature, backwards compatible
+# 2.0.0 → breaking change</code></pre>
+
+            <h3>Automatic versioning with setuptools-scm</h3>
+
+<pre><code># pyproject.toml
+[build-system]
+requires = ["setuptools>=75.0", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+dynamic = ["version"]  # version comes from git tags
+
+[tool.setuptools_scm]
+# Automatically derives version from git tags
+# Tag v0.1.0 → version is 0.1.0
+# 3 commits after v0.1.0 → version is 0.1.1.dev3+g1234abc</code></pre>
+
+<pre><code># Tag a release
+git tag v0.1.0
+git push origin v0.1.0
+
+# Build — version is auto-detected from tag
+python -m build</code></pre>
+
+            <h2>Dependency Management</h2>
+
+            <h3>Pin wisely</h3>
+
+<pre><code>[project]
+dependencies = [
+    # Libraries: use MINIMUM version + upper bound for major
+    "httpx>=0.27,<1.0",
+    "pydantic>=2.0,<3.0",
+
+    # Don't over-pin (bad for library consumers)
+    # ❌ "requests==2.31.0"  — forces exact version
+    # ✅ "requests>=2.28"    — allows flexibility
+]
+
+[project.optional-dependencies]
+# Dev tools can be pinned tighter
+dev = [
+    "pytest>=8.0,<9.0",
+    "ruff>=0.8",
+]</code></pre>
+
+            <div class="tip">
+                <strong>🎯 Library vs Application:</strong> Libraries should use loose version bounds (<span class="inline-code">>=2.0,&lt;3.0</span>) — your users have their own dependency trees. Applications can pin exact versions with a lockfile (<span class="inline-code">pip freeze</span>, <span class="inline-code">poetry.lock</span>, <span class="inline-code">uv.lock</span>).
+            </div>
+
+            <h2>CI/CD: Automated Testing & Publishing</h2>
+
+            <h3>GitHub Actions workflow</h3>
+
+<pre><code># .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check src/ tests/
+
+      - name: Type check
+        run: mypy src/
+
+      - name: Test
+        run: pytest --cov=awesome --cov-report=xml
+
+  publish:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # Trusted publishing (no token needed!)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build
+        run: |
+          pip install build
+          python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # Uses trusted publishing — no API token needed!
+        # Configure at: https://pypi.org/manage/project/.../settings/publishing/</code></pre>
+
+            <div class="tip">
+                <strong>🔒 Trusted publishing:</strong> Since 2023, PyPI supports OIDC-based publishing from GitHub Actions. No API tokens to manage — just link your GitHub repo to your PyPI project. It's the recommended approach.
+            </div>
+
+            <h3>Release workflow</h3>
+
+<pre><code># 1. Update CHANGELOG.md
+# 2. Bump version (or let setuptools-scm handle it)
+# 3. Commit and tag
+git add .
+git commit -m "Release v0.2.0"
+git tag v0.2.0
+git push origin main --tags
+
+# 4. CI runs tests → builds → publishes to PyPI automatically</code></pre>
+
+            <h2>Alternative Build Tools</h2>
+
+            <table>
+                <tr><th>Tool</th><th>Best For</th><th>Key Feature</th></tr>
+                <tr><td>setuptools</td><td>Most projects</td><td>Universal, well-documented</td></tr>
+                <tr><td>Hatchling</td><td>Modern libraries</td><td>Fast, PEP 621 native</td></tr>
+                <tr><td>Poetry</td><td>Apps with lockfiles</td><td>Dependency resolution + lockfile</td></tr>
+                <tr><td>PDM</td><td>PEP 582 fans</td><td>PEP standards-focused</td></tr>
+                <tr><td>Flit</td><td>Simple packages</td><td>Minimal config</td></tr>
+                <tr><td>uv</td><td>Speed-focused workflows</td><td>Rust-powered, extremely fast</td></tr>
+                <tr><td>Maturin</td><td>Rust+Python (PyO3)</td><td>Compile Rust extensions</td></tr>
+            </table>
+
+            <h3>Quick Poetry example</h3>
+
+<pre><code># Initialize
+poetry new my-lib
+cd my-lib
+
+# Add dependencies
+poetry add httpx pydantic
+poetry add --group dev pytest ruff
+
+# Build and publish
+poetry build
+poetry publish</code></pre>
+
+            <h2>Common Gotchas</h2>
+
+            <ul>
+                <li><strong>Name conflicts</strong> — check <span class="inline-code">pip install your-name</span> before choosing. PyPI names are global and case-insensitive.</li>
+                <li><strong>Missing files</strong> — if non-Python files (YAML, JSON, templates) aren't included, add them explicitly:
+<pre><code>[tool.setuptools.package-data]
+awesome = ["*.yaml", "templates/*.html"]</code></pre></li>
+                <li><strong>Import confusion</strong> — the package name (what you import) and the project name (what you pip install) can differ. Keep them close: <span class="inline-code">pip install awesome-lib</span> → <span class="inline-code">import awesome</span>.</li>
+                <li><strong>Forgotten __init__.py</strong> — every directory in your package needs one (even if empty). Without it, Python won't recognize the directory as a package.</li>
+                <li><strong>Version mismatch</strong> — use <span class="inline-code">setuptools-scm</span> or <span class="inline-code">hatch version</span> to derive from git tags. One source of truth.</li>
+            </ul>
+
+            <h2>Checklist: Ready to Publish?</h2>
+
+            <ul>
+                <li>✅ <span class="inline-code">pyproject.toml</span> with all metadata (name, version, description, license, URLs)</li>
+                <li>✅ README.md with install instructions and usage examples</li>
+                <li>✅ LICENSE file (MIT, Apache 2.0, etc.)</li>
+                <li>✅ CHANGELOG.md documenting changes per version</li>
+                <li>✅ Tests pass on all target Python versions</li>
+                <li>✅ <span class="inline-code">python -m build</span> succeeds, wheel contains expected files</li>
+                <li>✅ Successfully installed from wheel in a clean virtualenv</li>
+                <li>✅ <span class="inline-code">twine check dist/*</span> passes (validates metadata)</li>
+                <li>✅ Tested on TestPyPI first</li>
+                <li>✅ CI/CD pipeline configured for automated publishing on tags</li>
+            </ul>
+
+            <div class="cta">
+                <p>🚀 Want 50+ production-ready Python scripts and tools, all properly packaged?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="cli-tool-python.html">Build a Professional CLI Tool in Python</a> — create the CLI that your package exposes</li>
+                <li><a href="testing-python.html">Python Testing Guide — pytest, Mocking & CI</a> — test before you publish</li>
+                <li><a href="docker-python-deployment.html">Dockerize Python Apps</a> — containerize your packaged application</li>
+                <li><a href="python-env-config.html">Python Environment & Config Management</a> — manage configs across environments</li>
+                <li><a href="design-patterns-python.html">Python Design Patterns</a> — architect your library cleanly</li>
+            </ul>
+
+            <p>Need help packaging your Python project or setting up CI/CD? I build and publish Python libraries and automation tools. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
