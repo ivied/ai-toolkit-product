@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celery Task Queues — Background Jobs in Python (2026 Guide)</title>
+    <meta name="description" content="Complete guide to Celery for Python background tasks. Task queues, periodic jobs, retry logic, result backends, monitoring with Flower, Docker deployment, and production patterns.">
+    <meta name="keywords" content="celery python, task queue python, background jobs python, celery redis, celery beat, celery flower, python worker, async tasks python, celery docker, celery retry">
+    <meta property="og:title" content="Celery Task Queues — Background Jobs in Python (2026 Guide)">
+    <meta property="og:description" content="Master Celery: background tasks, periodic jobs, retry logic, monitoring, and Docker deployment. Production-ready patterns.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/celery-task-queue-python.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/celery-task-queue-python.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Celery Task Queues — Background Jobs in Python</h1>
+            <p class="meta">March 2026 · 22 min read · Python, Celery, Redis, Task Queues</p>
+
+            <p>Some things shouldn't block your API response: sending emails, processing images, generating reports, syncing data. That's where Celery comes in — a distributed task queue that lets you push work to background workers. This guide covers everything from setup to production deployment.</p>
+
+            <h2>When You Need a Task Queue</h2>
+
+            <ul>
+                <li><strong>Slow operations</strong> — image/video processing, PDF generation, ML inference</li>
+                <li><strong>External API calls</strong> — sending emails, SMS, webhooks (unreliable, slow)</li>
+                <li><strong>Scheduled jobs</strong> — daily reports, cleanup tasks, data syncs</li>
+                <li><strong>Rate-limited work</strong> — process 1000 items but API allows 10/sec</li>
+                <li><strong>Fan-out</strong> — one event triggers many independent actions</li>
+            </ul>
+
+            <div class="tip">
+                <strong>💡 Don't reach for Celery too early.</strong> For simple cases, FastAPI's <span class="inline-code">BackgroundTasks</span> (see our <a href="fastapi-rest-api.html">FastAPI guide</a>) or Python's <span class="inline-code">threading.Thread</span> might be enough. Celery shines when you need reliability, retries, scheduling, and horizontal scaling.
+            </div>
+
+            <h2>Setup</h2>
+
+<pre><code># Install
+pip install celery[redis] redis
+
+# Project structure
+myapp/
+├── app/
+│   ├── __init__.py
+│   ├── celery_app.py    # Celery configuration
+│   ├── tasks.py         # Task definitions
+│   └── main.py          # FastAPI app
+├── celery_worker.sh
+├── docker-compose.yml
+└── requirements.txt</code></pre>
+
+            <h3>Configure Celery</h3>
+
+<pre><code># app/celery_app.py
+from celery import Celery
+
+app = Celery(
+    "myapp",
+    broker="redis://localhost:6379/0",       # Message broker
+    backend="redis://localhost:6379/1",       # Result backend
+)
+
+# Configuration
+app.conf.update(
+    # Serialization
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+
+    # Timezone
+    timezone="UTC",
+    enable_utc=True,
+
+    # Reliability
+    task_acks_late=True,              # Ack after task completes (not before)
+    worker_prefetch_multiplier=1,     # Don't grab extra tasks
+    task_reject_on_worker_lost=True,  # Re-queue if worker crashes
+
+    # Limits
+    task_time_limit=300,              # Hard kill after 5 min
+    task_soft_time_limit=240,         # Raise SoftTimeLimitExceeded at 4 min
+
+    # Results
+    result_expires=3600,              # Results expire after 1 hour
+)
+
+# Auto-discover tasks in all app modules
+app.autodiscover_tasks(["app"])</code></pre>
+
+            <h2>Defining Tasks</h2>
+
+<pre><code># app/tasks.py
+import time
+import httpx
+from celery import shared_task
+from celery.utils.log import get_task_logger
+
+logger = get_task_logger(__name__)
+
+
+@shared_task(bind=True, name="send_email")
+def send_email(self, to: str, subject: str, body: str):
+    """Send an email — retries on failure."""
+    logger.info(f"Sending email to {to}: {subject}")
+
+    try:
+        # Simulate sending (replace with real SMTP/API)
+        response = httpx.post(
+            "https://api.mailservice.com/send",
+            json={"to": to, "subject": subject, "body": body},
+            timeout=10.0,
+        )
+        response.raise_for_status()
+        return {"status": "sent", "to": to}
+
+    except httpx.HTTPError as exc:
+        logger.warning(f"Email failed: {exc}. Retrying...")
+        raise self.retry(exc=exc, countdown=60, max_retries=3)
+
+
+@shared_task(name="process_image")
+def process_image(image_path: str, operations: list[str]) -> dict:
+    """Heavy image processing — runs in background."""
+    logger.info(f"Processing {image_path}: {operations}")
+
+    # Simulate work
+    time.sleep(5)
+
+    result_path = image_path.replace(".", "_processed.")
+    return {
+        "input": image_path,
+        "output": result_path,
+        "operations": operations,
+    }
+
+
+@shared_task(
+    bind=True,
+    name="sync_data",
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_backoff=True,        # Exponential backoff
+    retry_backoff_max=600,     # Max 10 min between retries
+    retry_jitter=True,         # Add randomness
+    max_retries=5,
+)
+def sync_data(self, source_url: str):
+    """Sync data from external API with automatic retry."""
+    logger.info(f"Syncing from {source_url} (attempt {self.request.retries + 1})")
+
+    with httpx.Client(timeout=30.0) as client:
+        resp = client.get(source_url)
+        resp.raise_for_status()
+        data = resp.json()
+
+    # Process data...
+    return {"synced": len(data), "source": source_url}</code></pre>
+
+            <h2>Calling Tasks</h2>
+
+<pre><code># Basic call — fire and forget
+send_email.delay("user@example.com", "Welcome!", "Thanks for signing up.")
+
+# With options
+send_email.apply_async(
+    args=["user@example.com", "Welcome!", "Thanks!"],
+    countdown=300,        # Delay 5 minutes
+    expires=3600,         # Discard if not executed within 1 hour
+    queue="emails",       # Route to specific queue
+)
+
+# Get result
+result = process_image.delay("/uploads/photo.jpg", ["resize", "compress"])
+print(result.id)          # Task ID (UUID)
+print(result.status)      # PENDING → STARTED → SUCCESS/FAILURE
+print(result.get(timeout=30))  # Block until done (use sparingly!)
+
+# Check without blocking
+if result.ready():
+    print(result.result)
+elif result.failed():
+    print(result.traceback)</code></pre>
+
+            <h3>Task chains and groups</h3>
+
+<pre><code>from celery import chain, group, chord
+
+
+# Chain: A → B → C (each gets result of previous)
+workflow = chain(
+    fetch_data.s("https://api.example.com/users"),
+    transform_data.s(),
+    save_to_db.s(),
+)
+result = workflow.apply_async()
+
+
+# Group: run A, B, C in parallel
+batch = group(
+    process_image.s(f"/uploads/{i}.jpg", ["resize"])
+    for i in range(100)
+)
+results = batch.apply_async()
+# results.get()  # Wait for all 100
+
+
+# Chord: run group in parallel, then callback when all done
+workflow = chord(
+    [process_image.s(f"/uploads/{i}.jpg", ["resize"]) for i in range(10)],
+    body=generate_report.s(),  # Called with list of results
+)
+workflow.apply_async()</code></pre>
+
+            <h2>Periodic Tasks (Celery Beat)</h2>
+
+            <p>Celery Beat is a scheduler that kicks off tasks at intervals — like cron, but integrated with your task queue. See also our <a href="task-scheduling-python.html">task scheduling guide</a> for alternatives.</p>
+
+<pre><code># app/celery_app.py — add to configuration
+from celery.schedules import crontab
+
+app.conf.beat_schedule = {
+    # Every 5 minutes
+    "check-api-health": {
+        "task": "check_health",
+        "schedule": 300.0,  # seconds
+    },
+
+    # Every day at 2 AM UTC
+    "daily-cleanup": {
+        "task": "cleanup_old_data",
+        "schedule": crontab(hour=2, minute=0),
+    },
+
+    # Every Monday at 9 AM
+    "weekly-report": {
+        "task": "generate_weekly_report",
+        "schedule": crontab(hour=9, minute=0, day_of_week=1),
+        "args": ["admin@company.com"],
+    },
+
+    # Every hour during business hours (Mon-Fri, 9-17)
+    "sync-crm": {
+        "task": "sync_data",
+        "schedule": crontab(hour="9-17", minute=0, day_of_week="1-5"),
+        "args": ["https://api.crm.com/contacts"],
+    },
+}</code></pre>
+
+<pre><code># Start Beat scheduler (separate process)
+celery -A app.celery_app beat --loglevel=info
+
+# Or combined worker + beat (dev only)
+celery -A app.celery_app worker --beat --loglevel=info</code></pre>
+
+            <h2>FastAPI Integration</h2>
+
+<pre><code># app/main.py
+from fastapi import FastAPI, HTTPException
+from celery.result import AsyncResult
+from .celery_app import app as celery_app
+from . import tasks
+
+api = FastAPI(title="Task Queue Demo")
+
+
+@api.post("/tasks/email")
+def queue_email(to: str, subject: str, body: str):
+    """Queue an email for background sending."""
+    result = tasks.send_email.delay(to, subject, body)
+    return {"task_id": result.id, "status": "queued"}
+
+
+@api.post("/tasks/process-image")
+def queue_image_processing(path: str, operations: list[str]):
+    result = tasks.process_image.delay(path, operations)
+    return {"task_id": result.id, "status": "queued"}
+
+
+@api.get("/tasks/{task_id}")
+def get_task_status(task_id: str):
+    """Check task status by ID."""
+    result = AsyncResult(task_id, app=celery_app)
+
+    response = {
+        "task_id": task_id,
+        "status": result.status,
+    }
+
+    if result.ready():
+        if result.successful():
+            response["result"] = result.result
+        else:
+            response["error"] = str(result.result)
+            response["traceback"] = result.traceback
+
+    return response
+
+
+@api.post("/tasks/{task_id}/revoke")
+def revoke_task(task_id: str, terminate: bool = False):
+    """Cancel a pending or running task."""
+    celery_app.control.revoke(task_id, terminate=terminate)
+    return {"task_id": task_id, "action": "revoked"}</code></pre>
+
+            <h2>Error Handling & Dead Letter Queue</h2>
+
+<pre><code># app/tasks.py — robust error handling
+from celery import shared_task
+from celery.exceptions import SoftTimeLimitExceeded
+import json
+from pathlib import Path
+
+
+DLQ_PATH = Path("dead_letter_queue/")
+DLQ_PATH.mkdir(exist_ok=True)
+
+
+class TaskFailure(Exception):
+    """Non-retryable task failure."""
+    pass
+
+
+@shared_task(
+    bind=True,
+    name="process_payment",
+    max_retries=3,
+    default_retry_delay=60,
+)
+def process_payment(self, order_id: str, amount: float):
+    try:
+        # Business logic...
+        if amount <= 0:
+            raise TaskFailure(f"Invalid amount: {amount}")
+
+        result = call_payment_api(order_id, amount)
+        return {"order_id": order_id, "status": "paid"}
+
+    except TaskFailure:
+        # Non-retryable — send to DLQ
+        _send_to_dlq(self, order_id=order_id, amount=amount)
+        raise
+
+    except SoftTimeLimitExceeded:
+        # Task took too long — log and retry
+        logger.error(f"Payment timeout for order {order_id}")
+        raise self.retry(countdown=120)
+
+    except Exception as exc:
+        if self.request.retries >= self.max_retries:
+            # All retries exhausted — DLQ
+            _send_to_dlq(self, order_id=order_id, amount=amount, error=str(exc))
+            raise
+        raise self.retry(exc=exc)
+
+
+def _send_to_dlq(task, **context):
+    """Save failed task to dead letter queue for manual review."""
+    dlq_entry = {
+        "task_id": task.request.id,
+        "task_name": task.name,
+        "retries": task.request.retries,
+        "context": context,
+        "timestamp": __import__("datetime").datetime.now().isoformat(),
+    }
+    dlq_file = DLQ_PATH / f"{task.request.id}.json"
+    dlq_file.write_text(json.dumps(dlq_entry, indent=2))
+    logger.error(f"Task {task.request.id} sent to DLQ: {dlq_file}")</code></pre>
+
+            <h2>Queue Routing</h2>
+
+            <p>Route different tasks to different queues for priority and resource isolation:</p>
+
+<pre><code># app/celery_app.py
+app.conf.task_routes = {
+    "send_email": {"queue": "emails"},
+    "process_image": {"queue": "heavy"},
+    "process_payment": {"queue": "payments"},
+    "sync_data": {"queue": "default"},
+}
+
+app.conf.task_default_queue = "default"</code></pre>
+
+<pre><code># Start workers per queue
+# Email worker — lightweight, many concurrent
+celery -A app.celery_app worker -Q emails -c 20 --loglevel=info
+
+# Heavy processing — fewer concurrent, more memory
+celery -A app.celery_app worker -Q heavy -c 2 --loglevel=info
+
+# Payment worker — single concurrency for ordering guarantees
+celery -A app.celery_app worker -Q payments -c 1 --loglevel=info
+
+# Default — handles everything else
+celery -A app.celery_app worker -Q default -c 10 --loglevel=info</code></pre>
+
+            <h2>Monitoring with Flower</h2>
+
+<pre><code># Install
+pip install flower
+
+# Start Flower web UI
+celery -A app.celery_app flower --port=5555
+
+# Open http://localhost:5555
+# See: active workers, task rates, success/failure, queue lengths</code></pre>
+
+            <p>Flower gives you real-time visibility into your task queue:</p>
+            <ul>
+                <li><strong>Dashboard</strong> — worker status, active/processed/failed task counts</li>
+                <li><strong>Tasks</strong> — search, filter, inspect individual task results and tracebacks</li>
+                <li><strong>Workers</strong> — pool size, memory usage, prefetch count</li>
+                <li><strong>Queues</strong> — message count per queue (spot bottlenecks)</li>
+                <li><strong>API</strong> — <span class="inline-code">/api/tasks</span> for programmatic monitoring</li>
+            </ul>
+
+            <h2>Docker Deployment</h2>
+
+            <p>See our <a href="docker-python-deployment.html">Docker guide</a> for Dockerfile fundamentals.</p>
+
+<pre><code># docker-compose.yml
+services:
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+
+  api:
+    build: .
+    command: uvicorn app.main:api --host 0.0.0.0 --port 8000
+    ports: ["8000:8000"]
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    depends_on:
+      redis: { condition: service_healthy }
+
+  worker-default:
+    build: .
+    command: celery -A app.celery_app worker -Q default -c 10 -l info
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    depends_on:
+      redis: { condition: service_healthy }
+
+  worker-heavy:
+    build: .
+    command: celery -A app.celery_app worker -Q heavy -c 2 -l info
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+    depends_on:
+      redis: { condition: service_healthy }
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  beat:
+    build: .
+    command: celery -A app.celery_app beat -l info
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+    depends_on:
+      redis: { condition: service_healthy }
+
+  flower:
+    build: .
+    command: celery -A app.celery_app flower --port=5555
+    ports: ["5555:5555"]
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+    depends_on:
+      redis: { condition: service_healthy }</code></pre>
+
+<pre><code># Start everything
+docker compose up -d
+
+# Scale workers dynamically
+docker compose up -d --scale worker-default=3
+
+# API: http://localhost:8000/docs
+# Flower: http://localhost:5555</code></pre>
+
+            <h2>Production Checklist</h2>
+
+            <ul>
+                <li><strong>acks_late = True</strong> — don't lose tasks when workers crash</li>
+                <li><strong>Time limits</strong> — both soft (graceful) and hard (kill) limits on every task</li>
+                <li><strong>Retry with backoff</strong> — exponential backoff + jitter for external calls</li>
+                <li><strong>Dead letter queue</strong> — failed tasks go somewhere reviewable, not into the void</li>
+                <li><strong>Idempotent tasks</strong> — tasks can run twice safely (dedup by task ID or business key)</li>
+                <li><strong>Queue routing</strong> — separate heavy/fast/critical tasks into different queues</li>
+                <li><strong>Monitoring</strong> — Flower + alerting on queue depth and failure rate</li>
+                <li><strong>Result expiry</strong> — set <span class="inline-code">result_expires</span> to prevent Redis from filling up</li>
+                <li><strong>Serialization</strong> — use JSON (not pickle) for security and debuggability</li>
+                <li><strong>Graceful shutdown</strong> — <span class="inline-code">celery worker --without-mingle --without-gossip</span> for faster restarts</li>
+            </ul>
+
+            <div class="tip">
+                <strong>🔑 The #1 mistake:</strong> Passing large objects (files, DataFrames) as task arguments. Instead, save to storage (S3, disk) and pass the <em>path/key</em>. Celery arguments go through Redis — keep them small.
+            </div>
+
+            <div class="cta">
+                <p>🚀 Want production-ready task queue templates, API tools, and automation scripts?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI</a> — integrate Celery with your API</li>
+                <li><a href="task-scheduling-python.html">Task Scheduling & Cron Jobs in Python</a> — alternatives to Celery Beat</li>
+                <li><a href="python-redis.html">Python Redis Guide</a> — the broker behind Celery</li>
+                <li><a href="python-microservices.html">Python Microservices</a> — async communication between services</li>
+                <li><a href="docker-python-deployment.html">Dockerize Python Apps</a> — deploy workers in containers</li>
+                <li><a href="async-python-guide.html">Python Async Programming</a> — asyncio vs Celery for background work</li>
+            </ul>
+
+            <p>Need help building a task queue system or background processing pipeline? I build Python APIs, workers, and automation tools. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
