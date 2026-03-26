@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build a Python Slack Bot — Commands, Events & Workflows (2026)</title>
+    <meta name="description" content="Step-by-step guide to building Slack bots in Python with Bolt. Slash commands, event handling, interactive modals, scheduled messages, database integration, and deployment with Docker.">
+    <meta name="keywords" content="slack bot python, slack bolt python, slash commands slack, slack api python, slack events api, slack interactive messages, slack bot tutorial 2026, slack automation python">
+    <meta property="og:title" content="Build a Python Slack Bot — Commands, Events & Workflows (2026)">
+    <meta property="og:description" content="Build powerful Slack bots with Python Bolt: slash commands, events, modals, scheduled messages, and deployment.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/slack-bot-python.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/slack-bot-python.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Build a Python Slack Bot — Commands, Events & Workflows</h1>
+            <p class="meta">March 2026 · 20 min read · Python, Slack, Bolt, Automation</p>
+
+            <p>Slack bots can do far more than post messages. With the Bolt framework, you can build slash commands, react to events, open interactive modals, schedule messages, and integrate with databases — all in Python. This guide takes you from zero to a production-ready Slack bot.</p>
+
+            <h2>Setup: Slack App + Bolt</h2>
+
+            <h3>Create a Slack App</h3>
+
+            <ol>
+                <li>Go to <a href="https://api.slack.com/apps">api.slack.com/apps</a> → <strong>Create New App</strong> → <strong>From scratch</strong></li>
+                <li>Name it (e.g., "TaskBot"), pick your workspace</li>
+                <li>Under <strong>OAuth & Permissions</strong>, add Bot Token Scopes:
+                    <ul>
+                        <li><span class="inline-code">chat:write</span> — send messages</li>
+                        <li><span class="inline-code">commands</span> — slash commands</li>
+                        <li><span class="inline-code">app_mentions:read</span> — react to @mentions</li>
+                        <li><span class="inline-code">reactions:write</span> — add emoji reactions</li>
+                        <li><span class="inline-code">channels:history</span> — read channel messages</li>
+                        <li><span class="inline-code">users:read</span> — look up user info</li>
+                    </ul>
+                </li>
+                <li>Install to workspace → copy <strong>Bot User OAuth Token</strong> (<span class="inline-code">xoxb-...</span>)</li>
+                <li>Under <strong>Basic Information</strong> → copy <strong>Signing Secret</strong></li>
+            </ol>
+
+            <h3>Install Bolt</h3>
+
+<pre><code>pip install slack-bolt
+
+# For async mode (recommended for production):
+pip install slack-bolt aiohttp</code></pre>
+
+            <h3>Minimal bot</h3>
+
+<pre><code># bot.py
+import os
+from slack_bolt import App
+from slack_bolt.adapter.socket_mode import SocketModeHandler
+
+app = App(token=os.environ["SLACK_BOT_TOKEN"])
+
+
+@app.event("app_mention")
+def handle_mention(event, say):
+    """React when someone @mentions the bot."""
+    user = event["user"]
+    say(f"Hey <@{user}>! How can I help? Try `/task` to create a task.")
+
+
+@app.command("/hello")
+def hello_command(ack, respond):
+    """Respond to /hello slash command."""
+    ack()  # Acknowledge within 3 seconds!
+    respond("Hello from TaskBot! 👋")
+
+
+if __name__ == "__main__":
+    # Socket Mode — no public URL needed for development
+    handler = SocketModeHandler(app, os.environ["SLACK_APP_TOKEN"])
+    handler.start()</code></pre>
+
+<pre><code># Run it
+export SLACK_BOT_TOKEN="xoxb-your-bot-token"
+export SLACK_APP_TOKEN="xapp-your-app-level-token"
+python bot.py</code></pre>
+
+            <div class="tip">
+                <strong>💡 Socket Mode vs HTTP:</strong> Socket Mode uses WebSocket — no public URL needed, perfect for development and internal bots. For production at scale, switch to HTTP mode with a proper server. We'll cover both.
+            </div>
+
+            <h2>Slash Commands</h2>
+
+            <p>Slash commands are the primary way users interact with bots. Always <span class="inline-code">ack()</span> within 3 seconds.</p>
+
+<pre><code>from datetime import datetime, timezone
+
+
+@app.command("/task")
+def create_task(ack, command, say, client):
+    """Create a task: /task Buy groceries"""
+    ack()
+
+    text = command.get("text", "").strip()
+    user_id = command["user_id"]
+    channel_id = command["channel_id"]
+
+    if not text:
+        # Show help
+        client.chat_postEphemeral(
+            channel=channel_id,
+            user=user_id,
+            text="Usage: `/task Buy groceries` — creates a new task",
+        )
+        return
+
+    # Create task (save to DB — see database section below)
+    task_id = save_task(text, user_id)
+
+    say(
+        text=f"✅ Task created: *{text}*",
+        blocks=[
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"✅ *Task #{task_id}*: {text}\nCreated by <@{user_id}>",
+                },
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "✓ Complete"},
+                        "style": "primary",
+                        "action_id": "complete_task",
+                        "value": str(task_id),
+                    },
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "✗ Delete"},
+                        "style": "danger",
+                        "action_id": "delete_task",
+                        "value": str(task_id),
+                    },
+                ],
+            },
+        ],
+    )
+
+
+@app.command("/tasks")
+def list_tasks(ack, command, respond):
+    """/tasks — list all open tasks for the user."""
+    ack()
+    user_id = command["user_id"]
+    tasks = get_user_tasks(user_id, completed=False)
+
+    if not tasks:
+        respond("No open tasks! 🎉")
+        return
+
+    lines = [f"*Your open tasks:*\n"]
+    for t in tasks:
+        age = (datetime.now(timezone.utc) - t["created_at"]).days
+        emoji = "🔴" if age > 7 else "🟡" if age > 3 else "🟢"
+        lines.append(f"{emoji} `#{t['id']}` {t['title']} ({age}d ago)")
+
+    respond("\n".join(lines))</code></pre>
+
+            <h2>Interactive Components</h2>
+
+            <h3>Button actions</h3>
+
+<pre><code>@app.action("complete_task")
+def handle_complete(ack, action, respond, body):
+    """Handle 'Complete' button click."""
+    ack()
+    task_id = int(action["value"])
+    user_id = body["user"]["id"]
+
+    task = complete_task(task_id, user_id)
+    if task:
+        respond(
+            text=f"✅ Task #{task_id} completed: ~{task['title']}~",
+            replace_original=True,
+        )
+    else:
+        respond("Task not found or already completed.", replace_original=False)
+
+
+@app.action("delete_task")
+def handle_delete(ack, action, respond, body):
+    """Handle 'Delete' button click."""
+    ack()
+    task_id = int(action["value"])
+    user_id = body["user"]["id"]
+
+    if delete_task(task_id, user_id):
+        respond(text=f"🗑️ Task #{task_id} deleted.", replace_original=True)
+    else:
+        respond("Task not found.", replace_original=False)</code></pre>
+
+            <h3>Modals (interactive forms)</h3>
+
+<pre><code>@app.command("/bug")
+def open_bug_modal(ack, body, client):
+    """/bug — open a modal form for bug reports."""
+    ack()
+
+    client.views_open(
+        trigger_id=body["trigger_id"],
+        view={
+            "type": "modal",
+            "callback_id": "bug_report_submit",
+            "title": {"type": "plain_text", "text": "Report a Bug"},
+            "submit": {"type": "plain_text", "text": "Submit"},
+            "blocks": [
+                {
+                    "type": "input",
+                    "block_id": "title_block",
+                    "element": {
+                        "type": "plain_text_input",
+                        "action_id": "title_input",
+                        "placeholder": {"type": "plain_text", "text": "Brief description"},
+                    },
+                    "label": {"type": "plain_text", "text": "Bug Title"},
+                },
+                {
+                    "type": "input",
+                    "block_id": "severity_block",
+                    "element": {
+                        "type": "static_select",
+                        "action_id": "severity_select",
+                        "options": [
+                            {"text": {"type": "plain_text", "text": "🔴 Critical"}, "value": "critical"},
+                            {"text": {"type": "plain_text", "text": "🟡 Medium"}, "value": "medium"},
+                            {"text": {"type": "plain_text", "text": "🟢 Low"}, "value": "low"},
+                        ],
+                    },
+                    "label": {"type": "plain_text", "text": "Severity"},
+                },
+                {
+                    "type": "input",
+                    "block_id": "steps_block",
+                    "element": {
+                        "type": "plain_text_input",
+                        "action_id": "steps_input",
+                        "multiline": True,
+                        "placeholder": {"type": "plain_text", "text": "Steps to reproduce..."},
+                    },
+                    "label": {"type": "plain_text", "text": "Steps to Reproduce"},
+                },
+            ],
+        },
+    )
+
+
+@app.view("bug_report_submit")
+def handle_bug_submit(ack, body, client, view):
+    """Process the bug report modal submission."""
+    ack()
+
+    values = view["state"]["values"]
+    title = values["title_block"]["title_input"]["value"]
+    severity = values["severity_block"]["severity_select"]["selected_option"]["value"]
+    steps = values["steps_block"]["steps_input"]["value"]
+    user_id = body["user"]["id"]
+
+    # Save to database
+    bug_id = save_bug_report(title, severity, steps, user_id)
+
+    # Post to #bugs channel
+    severity_emoji = {"critical": "🔴", "medium": "🟡", "low": "🟢"}
+    client.chat_postMessage(
+        channel="#bugs",
+        text=f"{severity_emoji[severity]} *Bug #{bug_id}*: {title}",
+        blocks=[
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"{severity_emoji[severity]} *Bug #{bug_id}*: {title}\n"
+                        f"*Severity:* {severity}\n"
+                        f"*Reporter:* <@{user_id}>\n"
+                        f"*Steps:*\n```{steps}```"
+                    ),
+                },
+            },
+        ],
+    )</code></pre>
+
+            <h2>Event Handling</h2>
+
+<pre><code>@app.event("message")
+def handle_message(event, say, client):
+    """React to specific message patterns."""
+    text = event.get("text", "").lower()
+    channel = event["channel"]
+
+    # Auto-react to keywords
+    if "deploy" in text and "production" in text:
+        client.reactions_add(
+            channel=channel,
+            name="rocket",
+            timestamp=event["ts"],
+        )
+
+    # Auto-thread long messages
+    if len(event.get("text", "")) > 500 and not event.get("thread_ts"):
+        say(
+            text="This is a long message — I've started a thread for discussion.",
+            thread_ts=event["ts"],
+        )
+
+
+@app.event("member_joined_channel")
+def welcome_member(event, say):
+    """Greet new channel members."""
+    user = event["user"]
+    channel = event["channel"]
+
+    say(
+        channel=channel,
+        text=f"Welcome <@{user}>! 👋 Here's what you need to know:",
+        blocks=[
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"Welcome <@{user}>! 👋\n\n"
+                        "• `/task` — create tasks\n"
+                        "• `/tasks` — view your tasks\n"
+                        "• `/bug` — report a bug\n"
+                        "• Mention me for help!"
+                    ),
+                },
+            },
+        ],
+    )
+
+
+@app.event("reaction_added")
+def handle_reaction(event, client):
+    """Track reactions for analytics or workflow triggers."""
+    if event["reaction"] == "white_check_mark":
+        # Someone marked a message as resolved
+        channel = event["item"]["channel"]
+        ts = event["item"]["ts"]
+
+        # Add a resolved indicator
+        client.reactions_add(channel=channel, name="heavy_check_mark", timestamp=ts)</code></pre>
+
+            <h2>Scheduled Messages</h2>
+
+<pre><code>import schedule
+import threading
+import time
+
+
+def daily_standup_reminder(app):
+    """Post standup reminder every weekday at 9 AM."""
+    app.client.chat_postMessage(
+        channel="#engineering",
+        text="🌅 *Daily Standup*\nWhat did you do yesterday? What are you doing today? Any blockers?",
+    )
+
+
+def weekly_metrics(app):
+    """Post weekly metrics every Monday at 10 AM."""
+    tasks = get_weekly_stats()
+    app.client.chat_postMessage(
+        channel="#engineering",
+        text=(
+            f"📊 *Weekly Summary*\n"
+            f"• Tasks created: {tasks['created']}\n"
+            f"• Tasks completed: {tasks['completed']}\n"
+            f"• Bugs reported: {tasks['bugs']}\n"
+            f"• Avg resolution: {tasks['avg_resolution_hours']:.1f}h"
+        ),
+    )
+
+
+def run_scheduler(app):
+    """Run scheduled jobs in a background thread."""
+    schedule.every().monday.at("10:00").do(weekly_metrics, app)
+    schedule.every().day.at("09:00").do(daily_standup_reminder, app)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
+
+
+# Start scheduler alongside the bot
+scheduler_thread = threading.Thread(target=run_scheduler, args=(app,), daemon=True)
+scheduler_thread.start()</code></pre>
+
+            <p>For more robust scheduling, see our <a href="task-scheduling-python.html">task scheduling guide</a> with APScheduler and Celery Beat.</p>
+
+            <h2>Database Integration</h2>
+
+            <p>Store tasks in SQLite for simplicity (see <a href="database-operations-python.html">database guide</a> for PostgreSQL).</p>
+
+<pre><code># db.py
+import sqlite3
+from datetime import datetime, timezone
+from contextlib import contextmanager
+
+DB_PATH = "tasks.db"
+
+
+def init_db():
+    """Create tables if they don't exist."""
+    with get_db() as conn:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                completed BOOLEAN DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS bugs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                severity TEXT NOT NULL,
+                steps TEXT,
+                reporter_id TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+
+@contextmanager
+def get_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def save_task(title: str, user_id: str) -> int:
+    with get_db() as conn:
+        cursor = conn.execute(
+            "INSERT INTO tasks (title, user_id) VALUES (?, ?)",
+            (title, user_id),
+        )
+        return cursor.lastrowid
+
+
+def get_user_tasks(user_id: str, completed: bool = False) -> list[dict]:
+    with get_db() as conn:
+        rows = conn.execute(
+            "SELECT * FROM tasks WHERE user_id = ? AND completed = ? ORDER BY created_at DESC",
+            (user_id, completed),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+
+def complete_task(task_id: int, user_id: str) -> dict | None:
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE tasks SET completed = 1 WHERE id = ? AND user_id = ?",
+            (task_id, user_id),
+        )
+        row = conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def delete_task(task_id: int, user_id: str) -> bool:
+    with get_db() as conn:
+        cursor = conn.execute(
+            "DELETE FROM tasks WHERE id = ? AND user_id = ?",
+            (task_id, user_id),
+        )
+        return cursor.rowcount > 0
+
+
+def save_bug_report(title: str, severity: str, steps: str, reporter_id: str) -> int:
+    with get_db() as conn:
+        cursor = conn.execute(
+            "INSERT INTO bugs (title, severity, steps, reporter_id) VALUES (?, ?, ?, ?)",
+            (title, severity, steps, reporter_id),
+        )
+        return cursor.lastrowid</code></pre>
+
+            <h2>Production: HTTP Mode with FastAPI</h2>
+
+            <p>For production, run Bolt in HTTP mode behind a proper server. Combines with <a href="fastapi-rest-api.html">FastAPI</a> for a unified API.</p>
+
+<pre><code># app.py — Production setup
+import os
+from slack_bolt import App
+from slack_bolt.adapter.fastapi import SlackRequestHandler
+from fastapi import FastAPI
+
+# Bolt app (same handlers as above)
+slack_app = App(
+    token=os.environ["SLACK_BOT_TOKEN"],
+    signing_secret=os.environ["SLACK_SIGNING_SECRET"],
+)
+
+# Register all handlers
+from handlers import register_handlers
+register_handlers(slack_app)
+
+# FastAPI wrapper
+api = FastAPI()
+handler = SlackRequestHandler(slack_app)
+
+
+@api.post("/slack/events")
+async def slack_events(req):
+    """Handle all Slack events and commands."""
+    return await handler.handle(req)
+
+
+@api.get("/health")
+def health():
+    return {"status": "healthy", "service": "slack-bot"}</code></pre>
+
+<pre><code># Dockerfile
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+CMD ["uvicorn", "app:api", "--host", "0.0.0.0", "--port", "3000"]</code></pre>
+
+<pre><code># Run
+docker build -t slack-bot .
+docker run -p 3000:3000 \
+  -e SLACK_BOT_TOKEN=xoxb-... \
+  -e SLACK_SIGNING_SECRET=... \
+  slack-bot
+
+# Set Request URL in Slack App settings:
+# https://your-domain.com/slack/events</code></pre>
+
+            <h2>Testing</h2>
+
+<pre><code># test_bot.py
+import pytest
+from unittest.mock import MagicMock, patch
+from db import save_task, get_user_tasks, complete_task, init_db
+
+
+@pytest.fixture(autouse=True)
+def fresh_db(tmp_path):
+    """Use a temp database for each test."""
+    import db
+    db.DB_PATH = str(tmp_path / "test.db")
+    init_db()
+
+
+def test_create_task():
+    task_id = save_task("Write tests", "U12345")
+    assert task_id == 1
+
+    tasks = get_user_tasks("U12345")
+    assert len(tasks) == 1
+    assert tasks[0]["title"] == "Write tests"
+
+
+def test_complete_task():
+    task_id = save_task("Deploy app", "U12345")
+    result = complete_task(task_id, "U12345")
+    assert result["completed"] == 1
+
+
+def test_complete_wrong_user():
+    task_id = save_task("Secret task", "U12345")
+    result = complete_task(task_id, "U99999")
+    # Task still exists but wasn't completed by wrong user
+    tasks = get_user_tasks("U12345", completed=False)
+    assert len(tasks) == 1
+
+
+def test_slash_command_handler():
+    """Test the slash command without Slack."""
+    from bot import create_task
+
+    ack = MagicMock()
+    command = {"text": "Buy groceries", "user_id": "U123", "channel_id": "C456"}
+    say = MagicMock()
+    client = MagicMock()
+
+    create_task(ack, command, say, client)
+
+    ack.assert_called_once()
+    say.assert_called_once()
+    call_kwargs = say.call_args[1]
+    assert "Buy groceries" in call_kwargs["text"]</code></pre>
+
+            <div class="tip">
+                <strong>💡 Best practices:</strong>
+                <ul>
+                    <li>Always <span class="inline-code">ack()</span> within 3 seconds — Slack shows an error otherwise</li>
+                    <li>Use <span class="inline-code">respond()</span> for ephemeral replies (only visible to the user)</li>
+                    <li>Use <span class="inline-code">say()</span> for public channel messages</li>
+                    <li>Use <span class="inline-code">client.chat_postEphemeral()</span> for private help messages</li>
+                    <li>Always handle errors gracefully — a crashed handler shows "dispatch_failed" to users</li>
+                    <li>Rate limit: 1 message per second per channel, burst up to ~50</li>
+                </ul>
+            </div>
+
+            <div class="cta">
+                <p>🚀 Want Slack bot templates, API automation scripts, and more Python tools?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="discord-bot-python.html">How to Build a Discord Bot in Python</a> — similar patterns for Discord</li>
+                <li><a href="telegram-bot-python.html">How to Build a Telegram Bot in Python</a> — Telegram bot development</li>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI</a> — HTTP mode deployment</li>
+                <li><a href="database-operations-python.html">Python Database Operations</a> — SQLite and PostgreSQL</li>
+                <li><a href="task-scheduling-python.html">Task Scheduling & Cron Jobs in Python</a> — scheduled messages</li>
+                <li><a href="docker-python-deployment.html">Dockerize Python Apps</a> — containerize your bot</li>
+            </ul>
+
+            <p>Need a custom Slack bot or workspace automation? I build bots, integrations, and workflow tools in Python. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
