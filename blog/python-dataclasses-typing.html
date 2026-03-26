@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Data Classes & Type Hints — Modern Python Guide (2026)</title>
+    <meta name="description" content="Master Python dataclasses, type hints, and Pydantic models. From basic @dataclass to advanced patterns: frozen instances, field factories, __post_init__, slots, runtime validation, generics, and Protocol-based duck typing.">
+    <meta name="keywords" content="python dataclasses, python type hints, pydantic, typing python, dataclass python, python generics, protocol python, mypy, python 3.12 typing, python attrs">
+    <meta property="og:title" content="Python Data Classes & Type Hints — Modern Python Guide (2026)">
+    <meta property="og:description" content="Dataclasses, type hints, Pydantic, and Protocol — modern Python data modeling with real-world examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-dataclasses-typing.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-dataclasses-typing.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Data Classes & Type Hints — Modern Python Guide</h1>
+            <p class="meta">March 2026 · 20 min read · Python, Dataclasses, Typing, Pydantic</p>
+
+            <p>Python's type system has evolved dramatically. Dataclasses, type hints, and runtime validation with Pydantic have transformed how we model data in Python. This guide covers everything from basic <span class="inline-code">@dataclass</span> to advanced generics and Protocol-based interfaces — with real code you'll use in production.</p>
+
+            <h2>Dataclasses — The Foundation</h2>
+
+            <h3>Basic dataclass</h3>
+
+<pre><code>from dataclasses import dataclass, field
+from datetime import datetime, timezone
+
+
+@dataclass
+class User:
+    name: str
+    email: str
+    age: int
+    is_active: bool = True
+    created_at: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+
+# Auto-generated: __init__, __repr__, __eq__
+user = User(name="Alice", email="alice@example.com", age=30)
+print(user)
+# User(name='Alice', email='alice@example.com', age=30, is_active=True, created_at=...)
+
+# Equality based on field values
+user2 = User(name="Alice", email="alice@example.com", age=30)
+print(user == user2)  # True (same field values)</code></pre>
+
+            <h3>Frozen (immutable) dataclasses</h3>
+
+<pre><code>@dataclass(frozen=True)
+class Point:
+    x: float
+    y: float
+
+    @property
+    def magnitude(self) -> float:
+        return (self.x ** 2 + self.y ** 2) ** 0.5
+
+
+p = Point(3.0, 4.0)
+print(p.magnitude)  # 5.0
+
+# p.x = 10  # ❌ FrozenInstanceError — can't mutate!
+
+# Frozen dataclasses are hashable — can use as dict keys / set members
+points = {Point(0, 0): "origin", Point(1, 1): "diagonal"}
+unique = {Point(1, 2), Point(1, 2), Point(3, 4)}
+print(len(unique))  # 2</code></pre>
+
+            <div class="tip">
+                <strong>💡 Use frozen=True</strong> for value objects (coordinates, money amounts, config records). It prevents accidental mutation and enables hashing.
+            </div>
+
+            <h3>__post_init__ — computed fields</h3>
+
+<pre><code>from dataclasses import dataclass, field
+
+
+@dataclass
+class Order:
+    items: list[dict]
+    tax_rate: float = 0.21
+    # Computed fields: set in __post_init__
+    subtotal: float = field(init=False)
+    tax: float = field(init=False)
+    total: float = field(init=False)
+
+    def __post_init__(self):
+        self.subtotal = sum(
+            item["price"] * item["quantity"] for item in self.items
+        )
+        self.tax = self.subtotal * self.tax_rate
+        self.total = self.subtotal + self.tax
+
+
+order = Order(
+    items=[
+        {"name": "Widget", "price": 10.0, "quantity": 3},
+        {"name": "Gadget", "price": 25.0, "quantity": 1},
+    ]
+)
+print(f"Subtotal: ${order.subtotal:.2f}")  # $55.00
+print(f"Tax: ${order.tax:.2f}")            # $11.55
+print(f"Total: ${order.total:.2f}")        # $66.55</code></pre>
+
+            <h3>Slots for performance</h3>
+
+<pre><code># Python 3.10+
+@dataclass(slots=True)
+class SensorReading:
+    sensor_id: str
+    value: float
+    timestamp: float
+
+# 20-30% faster attribute access, less memory
+# No __dict__ — can't add arbitrary attributes
+reading = SensorReading("temp-1", 23.5, 1711454700.0)
+# reading.extra = "nope"  # ❌ AttributeError</code></pre>
+
+            <h2>Type Hints — The Full Toolkit</h2>
+
+            <h3>Modern syntax (Python 3.10+)</h3>
+
+<pre><code># Old style (pre-3.10)
+from typing import Optional, Union, List, Dict, Tuple
+
+def old_style(
+    name: Optional[str],
+    items: List[int],
+    mapping: Dict[str, Union[int, str]],
+) -> Tuple[bool, str]:
+    ...
+
+
+# Modern syntax — cleaner, no imports needed
+def modern_style(
+    name: str | None,
+    items: list[int],
+    mapping: dict[str, int | str],
+) -> tuple[bool, str]:
+    ...
+
+
+# Type aliases (Python 3.12+)
+type JSON = dict[str, "JSON"] | list["JSON"] | str | int | float | bool | None
+type UserID = int
+type Headers = dict[str, str]</code></pre>
+
+            <h3>TypedDict — typed dictionaries</h3>
+
+<pre><code>from typing import TypedDict, NotRequired
+
+
+class APIResponse(TypedDict):
+    status: int
+    data: dict
+    message: str
+    errors: NotRequired[list[str]]  # Optional key
+
+
+def handle_response(resp: APIResponse) -> None:
+    print(f"Status: {resp['status']}")
+    if "errors" in resp:
+        for err in resp["errors"]:
+            print(f"Error: {err}")
+
+
+# Type checker validates the dict structure
+response: APIResponse = {
+    "status": 200,
+    "data": {"user_id": 1},
+    "message": "OK",
+}
+handle_response(response)  # ✅</code></pre>
+
+            <h3>Generics — type-safe containers</h3>
+
+<pre><code>from typing import Generic, TypeVar
+
+T = TypeVar("T")
+
+
+class Stack(Generic[T]):
+    """Type-safe stack."""
+
+    def __init__(self) -> None:
+        self._items: list[T] = []
+
+    def push(self, item: T) -> None:
+        self._items.append(item)
+
+    def pop(self) -> T:
+        if not self._items:
+            raise IndexError("Stack is empty")
+        return self._items.pop()
+
+    def peek(self) -> T:
+        if not self._items:
+            raise IndexError("Stack is empty")
+        return self._items[-1]
+
+    def __len__(self) -> int:
+        return len(self._items)
+
+
+# Type checker knows the element types
+int_stack: Stack[int] = Stack()
+int_stack.push(42)
+int_stack.push(99)
+value: int = int_stack.pop()  # ✅ int
+
+str_stack: Stack[str] = Stack()
+str_stack.push("hello")
+# str_stack.push(42)  # ❌ mypy error: expected str, got int</code></pre>
+
+            <h3>Python 3.12+ generics (new syntax)</h3>
+
+<pre><code># Python 3.12+ — cleaner generic syntax
+class Result[T, E]:
+    """Rust-inspired Result type."""
+
+    def __init__(self, value: T | None = None, error: E | None = None):
+        self._value = value
+        self._error = error
+
+    @classmethod
+    def ok(cls, value: T) -> "Result[T, E]":
+        return cls(value=value)
+
+    @classmethod
+    def err(cls, error: E) -> "Result[T, E]":
+        return cls(error=error)
+
+    def is_ok(self) -> bool:
+        return self._error is None
+
+    def unwrap(self) -> T:
+        if self._error is not None:
+            raise ValueError(f"Called unwrap on Err: {self._error}")
+        return self._value
+
+
+# Usage
+def divide(a: float, b: float) -> Result[float, str]:
+    if b == 0:
+        return Result.err("Division by zero")
+    return Result.ok(a / b)
+
+result = divide(10, 3)
+if result.is_ok():
+    print(f"Result: {result.unwrap():.2f}")  # 3.33</code></pre>
+
+            <h2>Protocol — Structural Typing (Duck Typing Done Right)</h2>
+
+            <p>Protocol lets you define interfaces based on what an object <em>can do</em>, not what it <em>inherits from</em>. This is the Pythonic alternative to abstract base classes. See also <a href="design-patterns-python.html">design patterns</a> for more patterns that use Protocol.</p>
+
+<pre><code>from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class Drawable(Protocol):
+    """Anything with a draw() method."""
+    def draw(self, x: int, y: int) -> None: ...
+
+
+@runtime_checkable
+class Serializable(Protocol):
+    """Anything that can serialize to dict."""
+    def to_dict(self) -> dict: ...
+
+
+# These classes DON'T inherit from Drawable — they just implement draw()
+class Circle:
+    def __init__(self, radius: float):
+        self.radius = radius
+
+    def draw(self, x: int, y: int) -> None:
+        print(f"Drawing circle (r={self.radius}) at ({x}, {y})")
+
+    def to_dict(self) -> dict:
+        return {"type": "circle", "radius": self.radius}
+
+
+class Square:
+    def __init__(self, side: float):
+        self.side = side
+
+    def draw(self, x: int, y: int) -> None:
+        print(f"Drawing square (s={self.side}) at ({x}, {y})")
+
+    def to_dict(self) -> dict:
+        return {"type": "square", "side": self.side}
+
+
+# Type checker accepts any Drawable — no inheritance needed!
+def render_all(shapes: list[Drawable], offset_x: int = 0) -> None:
+    for i, shape in enumerate(shapes):
+        shape.draw(offset_x + i * 100, 50)
+
+
+def save_all(items: list[Serializable]) -> list[dict]:
+    return [item.to_dict() for item in items]
+
+
+# Works with any object that has the right methods
+shapes = [Circle(25), Square(40), Circle(10)]
+render_all(shapes)
+data = save_all(shapes)
+
+# Runtime check works too
+print(isinstance(Circle(5), Drawable))      # True
+print(isinstance("not a shape", Drawable))  # False</code></pre>
+
+            <div class="tip">
+                <strong>💡 Protocol vs ABC:</strong> Use Protocol when you want "if it has these methods, it qualifies" (duck typing). Use ABC when you want enforced inheritance hierarchies. Protocol is more Pythonic for most use cases.
+            </div>
+
+            <h2>Pydantic — Runtime Validation</h2>
+
+            <p>Dataclasses don't validate data. Pydantic does — and it's the backbone of <a href="fastapi-rest-api.html">FastAPI</a>.</p>
+
+<pre><code>from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import EmailStr
+from datetime import datetime
+from enum import Enum
+
+
+class Role(str, Enum):
+    admin = "admin"
+    user = "user"
+    viewer = "viewer"
+
+
+class CreateUser(BaseModel):
+    """Validated user creation schema."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    age: int = Field(..., ge=13, le=150)
+    role: Role = Role.user
+    tags: list[str] = Field(default_factory=list, max_length=10)
+    password: str = Field(..., min_length=8)
+
+    @field_validator("name")
+    @classmethod
+    def name_must_be_titlecase(cls, v: str) -> str:
+        return v.strip().title()
+
+    @field_validator("tags")
+    @classmethod
+    def tags_lowercase(cls, v: list[str]) -> list[str]:
+        return [tag.lower().strip() for tag in v]
+
+    @model_validator(mode="after")
+    def validate_admin_age(self):
+        if self.role == Role.admin and self.age < 18:
+            raise ValueError("Admins must be 18+")
+        return self
+
+
+# ✅ Valid
+user = CreateUser(
+    name="alice smith",
+    email="alice@example.com",
+    age=25,
+    password="securepass123",
+    tags=["Python", "FastAPI"],
+)
+print(user.name)   # "Alice Smith" (auto-titlecased)
+print(user.tags)   # ["python", "fastapi"] (auto-lowercased)
+
+# ❌ Validation errors
+try:
+    bad = CreateUser(
+        name="",           # too short
+        email="not-email", # invalid email
+        age=5,             # under 13
+        password="short",  # under 8 chars
+    )
+except Exception as e:
+    print(e)
+    # 4 validation errors:
+    # name: String should have at least 1 character
+    # email: value is not a valid email address
+    # age: Input should be >= 13
+    # password: String should have at least 8 characters</code></pre>
+
+            <h3>Pydantic + JSON serialization</h3>
+
+<pre><code>import json
+
+# To dict (with aliases, excludes)
+data = user.model_dump()
+print(data)
+
+# To JSON string
+json_str = user.model_json_schema()  # JSON Schema
+json_data = user.model_dump_json()    # Serialized JSON
+
+# From JSON / dict
+user_from_dict = CreateUser.model_validate({"name": "bob", "email": "bob@b.com", "age": 20, "password": "12345678"})
+user_from_json = CreateUser.model_validate_json('{"name":"carol","email":"carol@c.com","age":30,"password":"pass12345"}')</code></pre>
+
+            <h3>Pydantic Settings — config from environment</h3>
+
+<pre><code>from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    """App config from environment variables."""
+
+    app_name: str = "My App"
+    debug: bool = False
+    database_url: str
+    redis_url: str = "redis://localhost:6379"
+    secret_key: str
+    allowed_origins: list[str] = ["http://localhost:3000"]
+
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+    }
+
+
+# Reads from environment / .env file
+# DATABASE_URL=postgresql://... SECRET_KEY=abc123
+settings = Settings()
+print(settings.database_url)</code></pre>
+
+            <h2>Dataclass vs Pydantic vs NamedTuple vs attrs</h2>
+
+            <table>
+                <tr><th>Feature</th><th>dataclass</th><th>Pydantic</th><th>NamedTuple</th><th>attrs</th></tr>
+                <tr><td>Runtime validation</td><td>❌</td><td>✅</td><td>❌</td><td>✅ (validators)</td></tr>
+                <tr><td>JSON serialization</td><td>Manual</td><td>✅ Built-in</td><td>❌</td><td>Via cattrs</td></tr>
+                <tr><td>Immutability</td><td>frozen=True</td><td>frozen=True</td><td>Always</td><td>frozen=True</td></tr>
+                <tr><td>Performance</td><td>⚡ Fast</td><td>⚡ Fast (v2)</td><td>⚡⚡ Fastest</td><td>⚡ Fast</td></tr>
+                <tr><td>Slots</td><td>slots=True</td><td>❌</td><td>Always</td><td>slots=True</td></tr>
+                <tr><td>Stdlib</td><td>✅</td><td>❌ (pip)</td><td>✅</td><td>❌ (pip)</td></tr>
+                <tr><td>Best for</td><td>Internal models</td><td>API / config</td><td>Simple tuples</td><td>Advanced models</td></tr>
+            </table>
+
+            <div class="tip">
+                <strong>🎯 Decision guide:</strong>
+                <ul>
+                    <li><strong>API request/response</strong> → Pydantic (validation + serialization)</li>
+                    <li><strong>Internal data structures</strong> → dataclass (simple, stdlib)</li>
+                    <li><strong>Return multiple values</strong> → NamedTuple (lightweight)</li>
+                    <li><strong>Complex validation + ORM-like</strong> → attrs or Pydantic</li>
+                </ul>
+            </div>
+
+            <h2>Advanced Patterns</h2>
+
+            <h3>Dataclass inheritance</h3>
+
+<pre><code>from dataclasses import dataclass, field
+from datetime import datetime, timezone
+
+
+@dataclass
+class BaseEntity:
+    """Common fields for all database entities."""
+    id: int | None = None
+    created_at: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+
+
+@dataclass
+class Product(BaseEntity):
+    name: str = ""
+    price: float = 0.0
+    stock: int = 0
+
+
+@dataclass
+class Customer(BaseEntity):
+    name: str = ""
+    email: str = ""
+    tier: str = "free"
+
+
+product = Product(name="Widget", price=29.99, stock=100)
+print(product.created_at)  # Inherited from BaseEntity</code></pre>
+
+            <h3>Dataclass as a lightweight ORM</h3>
+
+<pre><code>from dataclasses import dataclass, fields, asdict
+import sqlite3
+
+
+@dataclass
+class Model:
+    """Base model with save/load capabilities."""
+
+    @classmethod
+    def table_name(cls) -> str:
+        return cls.__name__.lower() + "s"
+
+    @classmethod
+    def from_row(cls, row: dict) -> "Model":
+        field_names = {f.name for f in fields(cls)}
+        filtered = {k: v for k, v in row.items() if k in field_names}
+        return cls(**filtered)
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    def save(self, conn: sqlite3.Connection) -> None:
+        data = self.to_dict()
+        cols = ", ".join(data.keys())
+        placeholders = ", ".join("?" * len(data))
+        conn.execute(
+            f"INSERT OR REPLACE INTO {self.table_name()} ({cols}) VALUES ({placeholders})",
+            list(data.values()),
+        )
+        conn.commit()
+
+
+@dataclass
+class Task(Model):
+    id: int | None = None
+    title: str = ""
+    completed: bool = False
+
+
+# Usage
+conn = sqlite3.connect(":memory:")
+conn.execute("CREATE TABLE tasks (id INTEGER PRIMARY KEY, title TEXT, completed BOOLEAN)")
+
+task = Task(title="Write docs", completed=False)
+task.save(conn)  # Saved to SQLite</code></pre>
+
+            <h3>Converters with cattrs</h3>
+
+<pre><code># pip install cattrs
+import cattrs
+from dataclasses import dataclass
+
+
+@dataclass
+class Address:
+    street: str
+    city: str
+    zip_code: str
+
+
+@dataclass
+class Person:
+    name: str
+    age: int
+    address: Address
+
+
+# Automatic structuring from nested dicts
+converter = cattrs.Converter()
+
+raw = {
+    "name": "Alice",
+    "age": 30,
+    "address": {
+        "street": "123 Main St",
+        "city": "Springfield",
+        "zip_code": "62701",
+    },
+}
+
+person = converter.structure(raw, Person)
+print(person.address.city)  # Springfield
+
+# Back to dict
+data = converter.unstructure(person)
+print(data)  # Nested dict</code></pre>
+
+            <h2>Type Checking in Practice</h2>
+
+<pre><code># pyproject.toml
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+
+# Per-module overrides
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false</code></pre>
+
+<pre><code># Run mypy
+mypy app/ --strict
+
+# Or use pyright (faster)
+pyright app/
+
+# In CI (GitHub Actions)
+# - name: Type check
+#   run: mypy app/ --strict</code></pre>
+
+            <div class="cta">
+                <p>🚀 Want production-ready Python templates with proper typing, dataclasses, and automation scripts?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI</a> — Pydantic schemas for API validation</li>
+                <li><a href="design-patterns-python.html">Python Design Patterns</a> — patterns using Protocol and dataclasses</li>
+                <li><a href="testing-python.html">Python Testing Guide</a> — test typed code with mypy and pytest</li>
+                <li><a href="python-packaging.html">Python Packaging Guide</a> — distribute typed packages with py.typed</li>
+                <li><a href="database-operations-python.html">Python Database Operations</a> — SQLAlchemy models vs dataclasses</li>
+            </ul>
+
+            <p>Need help structuring a Python project with proper typing? I build well-typed APIs, automation tools, and data pipelines. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
