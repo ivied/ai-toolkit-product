@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Database Operations — SQLite, PostgreSQL & SQLAlchemy Guide</title>
+    <meta name="description" content="Complete guide to database operations in Python. Master SQLite, PostgreSQL with psycopg2, SQLAlchemy ORM, migrations, connection pooling, and async database patterns.">
+    <meta name="keywords" content="python database, sqlite python, postgresql python, sqlalchemy orm, psycopg2, alembic migrations, python database tutorial, connection pooling python, async database python">
+    <meta property="og:title" content="Python Database Operations — SQLite, PostgreSQL & SQLAlchemy Guide">
+    <meta property="og:description" content="Master database operations in Python. From SQLite basics to production PostgreSQL with SQLAlchemy ORM, migrations, and async patterns.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/database-operations-python.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/database-operations-python.html">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; color: #1a1a2e; background: #fafafa; }
+        .container { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2.2rem; margin-bottom: 0.5rem; color: #16213e; }
+        h2 { font-size: 1.6rem; margin: 2.5rem 0 1rem; color: #16213e; border-bottom: 2px solid #e94560; padding-bottom: 0.3rem; }
+        h3 { font-size: 1.3rem; margin: 2rem 0 0.8rem; color: #0f3460; }
+        p { margin-bottom: 1.2rem; }
+        .meta { color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: #1a1a2e; color: #e0e0e0; padding: 1.2rem; border-radius: 8px; overflow-x: auto; margin: 1.2rem 0; font-size: 0.9rem; line-height: 1.5; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; }
+        .inline-code { background: #eef; padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.9em; color: #0f3460; }
+        ul, ol { margin: 1rem 0 1.2rem 1.5rem; }
+        li { margin-bottom: 0.5rem; }
+        .tip { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 1rem; margin: 1.2rem 0; border-radius: 0 8px 8px 0; }
+        .warning { background: #fff3e0; border-left: 4px solid #ff9800; padding: 1rem; margin: 1.2rem 0; border-radius: 0 8px 8px 0; }
+        .cta { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 12px; text-align: center; margin: 3rem 0; }
+        .cta a { color: white; text-decoration: none; font-weight: bold; font-size: 1.1rem; background: rgba(255,255,255,0.2); padding: 0.8rem 2rem; border-radius: 8px; display: inline-block; margin-top: 1rem; }
+        .cta a:hover { background: rgba(255,255,255,0.3); }
+        a { color: #e94560; }
+        .nav { margin-bottom: 2rem; font-size: 0.9rem; }
+        .nav a { color: #666; text-decoration: none; }
+        .nav a:hover { color: #e94560; }
+        .related { background: #f0f0f5; padding: 1.5rem; border-radius: 8px; margin-top: 2rem; }
+        .related h3 { margin-top: 0; }
+        .related a { display: block; margin: 0.5rem 0; }
+        .toc { background: #f5f5ff; padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; }
+        .toc ul { list-style: none; margin-left: 0; }
+        .toc li { margin-bottom: 0.3rem; }
+        .toc a { text-decoration: none; color: #0f3460; }
+        .toc a:hover { color: #e94560; }
+    </style>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "Python Database Operations — SQLite, PostgreSQL & SQLAlchemy Guide",
+        "description": "Complete guide to database operations in Python. Master SQLite, PostgreSQL with psycopg2, SQLAlchemy ORM, migrations, connection pooling, and async patterns.",
+        "author": {"@type": "Organization", "name": "OpenClaw Team"},
+        "datePublished": "2026-03-26",
+        "publisher": {"@type": "Organization", "name": "OpenClaw"},
+        "mainEntityOfPage": "https://openclawmara.codeberg.page/ai-toolkit-product/blog/database-operations-python.html"
+    }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="../">← Home</a> &middot; <a href="./">Blog</a>
+        </div>
+
+        <h1>Python Database Operations — SQLite, PostgreSQL & SQLAlchemy Guide</h1>
+        <p class="meta">By OpenClaw Team · March 26, 2026 · 15 min read</p>
+
+        <p>Every serious Python application needs a database. Whether you're building an <a href="api-integration-python.html">API backend</a>, a <a href="data-pipeline-python.html">data pipeline</a>, or a <a href="cli-tool-python.html">CLI tool</a> that tracks state — understanding database operations is essential. This guide covers everything from SQLite's zero-config simplicity to production PostgreSQL with SQLAlchemy ORM.</p>
+
+        <div class="toc">
+            <strong>Table of Contents</strong>
+            <ul>
+                <li><a href="#sqlite-basics">1. SQLite — Zero-Config Database</a></li>
+                <li><a href="#sqlite-patterns">2. SQLite Patterns for Real Projects</a></li>
+                <li><a href="#postgresql">3. PostgreSQL with psycopg2</a></li>
+                <li><a href="#sqlalchemy">4. SQLAlchemy ORM</a></li>
+                <li><a href="#migrations">5. Database Migrations with Alembic</a></li>
+                <li><a href="#connection-pooling">6. Connection Pooling</a></li>
+                <li><a href="#transactions">7. Transactions & Error Handling</a></li>
+                <li><a href="#async-db">8. Async Database Operations</a></li>
+                <li><a href="#testing">9. Testing with In-Memory SQLite</a></li>
+                <li><a href="#performance">10. Performance Tips & Indexing</a></li>
+                <li><a href="#best-practices">11. Best Practices Checklist</a></li>
+            </ul>
+        </div>
+
+        <h2 id="sqlite-basics">1. SQLite — Zero-Config Database</h2>
+
+        <p>SQLite ships with Python's standard library. No server, no installation, no configuration. It's perfect for prototypes, small apps, local caches, and embedded systems.</p>
+
+<pre><code>import sqlite3
+from pathlib import Path
+
+
+def create_database(db_path: str = "app.db"):
+    """Create a database with a users table."""
+    conn = sqlite3.connect(db_path)
+    # Return rows as dictionaries instead of tuples
+    conn.row_factory = sqlite3.Row
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            is_active BOOLEAN DEFAULT 1
+        )
+    """)
+
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_users_email
+        ON users(email)
+    """)
+
+    conn.commit()
+    return conn
+
+
+# Basic CRUD operations
+conn = create_database()
+
+# INSERT
+conn.execute(
+    "INSERT OR IGNORE INTO users (email, name) VALUES (?, ?)",
+    ("alice@example.com", "Alice")
+)
+conn.commit()
+
+# SELECT
+user = conn.execute(
+    "SELECT * FROM users WHERE email = ?",
+    ("alice@example.com",)
+).fetchone()
+
+if user:
+    print(f"Found: {user['name']} (id={user['id']})")
+
+# UPDATE
+conn.execute(
+    "UPDATE users SET name = ? WHERE email = ?",
+    ("Alice Smith", "alice@example.com")
+)
+conn.commit()
+
+# DELETE
+conn.execute("DELETE FROM users WHERE is_active = 0")
+conn.commit()</code></pre>
+
+        <div class="tip">
+            <strong>Always use parameterized queries</strong> (<code class="inline-code">?</code> placeholders). Never use f-strings or string formatting to build SQL — that's how SQL injection happens.
+        </div>
+
+        <h2 id="sqlite-patterns">2. SQLite Patterns for Real Projects</h2>
+
+        <h3>Context Manager Pattern</h3>
+
+<pre><code>import sqlite3
+from contextlib import contextmanager
+
+
+@contextmanager
+def get_db(db_path: str = "app.db"):
+    """Database connection with automatic commit/rollback."""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")  # Better concurrency
+    conn.execute("PRAGMA foreign_keys=ON")   # Enforce FK constraints
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+# Usage — auto-commits on success, rollbacks on error
+with get_db() as db:
+    db.execute("INSERT INTO users (email, name) VALUES (?, ?)",
+               ("bob@example.com", "Bob"))
+    # Auto-commits here</code></pre>
+
+        <h3>Bulk Operations</h3>
+
+<pre><code>def bulk_insert_users(users: list[dict], db_path: str = "app.db"):
+    """Insert many records efficiently."""
+    with get_db(db_path) as db:
+        db.executemany(
+            "INSERT OR IGNORE INTO users (email, name) VALUES (:email, :name)",
+            users
+        )
+
+
+# Insert 1000 users in one transaction
+users = [
+    {"email": f"user{i}@example.com", "name": f"User {i}"}
+    for i in range(1000)
+]
+bulk_insert_users(users)  # Fast — single transaction</code></pre>
+
+        <h3>Key-Value Store</h3>
+
+<pre><code>import json
+import sqlite3
+
+
+class KVStore:
+    """Simple key-value store backed by SQLite."""
+
+    def __init__(self, db_path: str = "kv.db"):
+        self.conn = sqlite3.connect(db_path)
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS kv (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        self.conn.commit()
+
+    def get(self, key: str, default=None):
+        row = self.conn.execute(
+            "SELECT value FROM kv WHERE key = ?", (key,)
+        ).fetchone()
+        if row is None:
+            return default
+        return json.loads(row[0])
+
+    def set(self, key: str, value):
+        self.conn.execute(
+            """INSERT INTO kv (key, value, updated_at)
+               VALUES (?, ?, CURRENT_TIMESTAMP)
+               ON CONFLICT(key) DO UPDATE
+               SET value = excluded.value,
+                   updated_at = CURRENT_TIMESTAMP""",
+            (key, json.dumps(value))
+        )
+        self.conn.commit()
+
+    def delete(self, key: str):
+        self.conn.execute("DELETE FROM kv WHERE key = ?", (key,))
+        self.conn.commit()
+
+
+# Usage
+store = KVStore()
+store.set("config", {"theme": "dark", "lang": "en"})
+config = store.get("config")
+print(config)  # {'theme': 'dark', 'lang': 'en'}</code></pre>
+
+        <h2 id="postgresql">3. PostgreSQL with psycopg2</h2>
+
+        <p>For production applications, PostgreSQL is the standard. <code class="inline-code">psycopg2</code> is the most popular adapter — battle-tested and widely deployed.</p>
+
+<pre><code>import psycopg2
+from psycopg2.extras import RealDictCursor, execute_values
+
+
+def get_pg_connection(dsn: str = None):
+    """Connect to PostgreSQL with sensible defaults."""
+    conn = psycopg2.connect(
+        dsn or "postgresql://user:pass@localhost:5432/mydb",
+        cursor_factory=RealDictCursor,  # Return dicts, not tuples
+    )
+    conn.autocommit = False
+    return conn
+
+
+# Basic operations
+conn = get_pg_connection()
+
+try:
+    with conn.cursor() as cur:
+        # Create table with PostgreSQL-specific features
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS products (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                price NUMERIC(10, 2) NOT NULL,
+                tags TEXT[] DEFAULT '{}',
+                metadata JSONB DEFAULT '{}',
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
+
+        # INSERT with RETURNING
+        cur.execute(
+            """INSERT INTO products (name, price, tags, metadata)
+               VALUES (%s, %s, %s, %s)
+               RETURNING id, created_at""",
+            ("Widget", 29.99, ["sale", "new"],
+             '{"color": "blue", "weight": 150}')
+        )
+        result = cur.fetchone()
+        print(f"Created product {result['id']} at {result['created_at']}")
+
+        # UPSERT (INSERT ... ON CONFLICT)
+        cur.execute(
+            """INSERT INTO products (name, price)
+               VALUES (%s, %s)
+               ON CONFLICT (name) DO UPDATE
+               SET price = EXCLUDED.price
+               RETURNING id""",
+            ("Widget", 24.99)
+        )
+
+        # JSONB queries
+        cur.execute(
+            "SELECT * FROM products WHERE metadata->>'color' = %s",
+            ("blue",)
+        )
+        blue_products = cur.fetchall()
+
+        # Array queries
+        cur.execute(
+            "SELECT * FROM products WHERE %s = ANY(tags)",
+            ("sale",)
+        )
+        on_sale = cur.fetchall()
+
+    conn.commit()
+
+except Exception as e:
+    conn.rollback()
+    print(f"Error: {e}")
+finally:
+    conn.close()</code></pre>
+
+        <h3>Bulk Insert with execute_values</h3>
+
+<pre><code>from psycopg2.extras import execute_values
+
+
+def bulk_insert_products(products: list[dict]):
+    """Fast bulk insert using execute_values."""
+    conn = get_pg_connection()
+    try:
+        with conn.cursor() as cur:
+            execute_values(
+                cur,
+                """INSERT INTO products (name, price, tags)
+                   VALUES %s
+                   ON CONFLICT (name) DO NOTHING""",
+                [(p["name"], p["price"], p.get("tags", []))
+                 for p in products],
+                page_size=1000  # Batch size
+            )
+        conn.commit()
+        print(f"Inserted {len(products)} products")
+    finally:
+        conn.close()
+
+
+# 10x faster than individual INSERTs
+products = [
+    {"name": f"Product {i}", "price": 9.99 + i}
+    for i in range(5000)
+]
+bulk_insert_products(products)</code></pre>
+
+        <div class="warning">
+            <strong>psycopg2 uses <code class="inline-code">%s</code> for placeholders</strong>, not <code class="inline-code">?</code> like SQLite. Don't mix them up — it's a common source of bugs.
+        </div>
+
+        <h2 id="sqlalchemy">4. SQLAlchemy ORM</h2>
+
+        <p>SQLAlchemy lets you work with databases using Python classes instead of raw SQL. It supports SQLite, PostgreSQL, MySQL, and more — switch databases by changing one URL.</p>
+
+<pre><code>from datetime import datetime
+from sqlalchemy import create_engine, Column, Integer, String, Float, \
+    Boolean, DateTime, ForeignKey, Index
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+
+
+Base = declarative_base()
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    name = Column(String(100), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationship
+    orders = relationship("Order", back_populates="user",
+                         cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"&lt;User {self.email}&gt;"
+
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    total = Column(Float, nullable=False)
+    status = Column(String(20), default="pending")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="orders")
+
+    # Composite index for common queries
+    __table_args__ = (
+        Index("idx_orders_user_status", "user_id", "status"),
+    )
+
+
+# Setup
+engine = create_engine(
+    "sqlite:///app.db",
+    echo=False,          # Set True for SQL logging
+    pool_pre_ping=True,  # Verify connections before use
+)
+Base.metadata.create_all(engine)
+Session = sessionmaker(bind=engine)</code></pre>
+
+        <h3>CRUD with SQLAlchemy</h3>
+
+<pre><code># CREATE
+session = Session()
+
+user = User(email="alice@example.com", name="Alice")
+session.add(user)
+session.commit()
+
+# READ
+user = session.query(User).filter_by(email="alice@example.com").first()
+active_users = session.query(User).filter(User.is_active == True).all()
+
+# Advanced queries
+from sqlalchemy import func, and_, or_
+
+# Count orders per user
+results = session.query(
+    User.name,
+    func.count(Order.id).label("order_count"),
+    func.sum(Order.total).label("total_spent")
+).join(Order).group_by(User.name).having(
+    func.count(Order.id) > 5
+).all()
+
+# Subquery
+big_spenders = session.query(User).filter(
+    User.id.in_(
+        session.query(Order.user_id)
+        .group_by(Order.user_id)
+        .having(func.sum(Order.total) > 1000)
+    )
+).all()
+
+# UPDATE
+user.name = "Alice Smith"
+session.commit()
+
+# Bulk update
+session.query(User).filter(
+    User.created_at < datetime(2025, 1, 1)
+).update({"is_active": False})
+session.commit()
+
+# DELETE
+session.delete(user)
+session.commit()
+
+session.close()</code></pre>
+
+        <h3>Session Management Pattern</h3>
+
+<pre><code>from contextlib import contextmanager
+
+
+@contextmanager
+def get_session():
+    """Provide a transactional scope around operations."""
+    session = Session()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+# Clean, safe usage
+with get_session() as s:
+    user = User(email="bob@example.com", name="Bob")
+    s.add(user)
+    order = Order(user=user, total=49.99)
+    s.add(order)
+    # Auto-commits on exit, rollbacks on error</code></pre>
+
+        <h2 id="migrations">5. Database Migrations with Alembic</h2>
+
+        <p>Alembic tracks schema changes so you can evolve your database safely — version control for your schema.</p>
+
+<pre><code># Install and initialize
+# pip install alembic
+# alembic init migrations
+
+# In alembic.ini, set your database URL:
+# sqlalchemy.url = postgresql://user:pass@localhost/mydb
+
+# In migrations/env.py, import your models:
+# from myapp.models import Base
+# target_metadata = Base.metadata</code></pre>
+
+        <h3>Creating and Running Migrations</h3>
+
+<pre><code># Auto-generate migration from model changes
+# alembic revision --autogenerate -m "add users table"
+
+# Manually create a migration
+# alembic revision -m "add email index"
+
+# Example migration file: migrations/versions/001_add_users.py
+"""Add users table."""
+
+from alembic import op
+import sqlalchemy as sa
+
+
+def upgrade():
+    op.create_table(
+        "users",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("email", sa.String(255), unique=True, nullable=False),
+        sa.Column("name", sa.String(100), nullable=False),
+        sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
+    )
+    op.create_index("idx_users_email", "users", ["email"])
+
+
+def downgrade():
+    op.drop_index("idx_users_email")
+    op.drop_table("users")</code></pre>
+
+<pre><code># Run migrations
+# alembic upgrade head          # Apply all pending
+# alembic upgrade +1            # Apply next one
+# alembic downgrade -1          # Rollback last one
+# alembic current               # Show current version
+# alembic history                # Show migration history</code></pre>
+
+        <div class="tip">
+            <strong>Always review auto-generated migrations.</strong> Alembic can't detect all changes (renamed columns, data migrations). Verify the SQL before running in production.
+        </div>
+
+        <h2 id="connection-pooling">6. Connection Pooling</h2>
+
+        <p>Opening a new database connection per request is slow. Connection pooling reuses connections, dramatically improving performance.</p>
+
+<pre><code>from sqlalchemy import create_engine
+from sqlalchemy.pool import QueuePool
+
+
+# SQLAlchemy with connection pool
+engine = create_engine(
+    "postgresql://user:pass@localhost/mydb",
+    poolclass=QueuePool,
+    pool_size=10,           # Maintain 10 connections
+    max_overflow=20,        # Allow 20 extra under load
+    pool_timeout=30,        # Wait 30s for a connection
+    pool_recycle=3600,      # Recycle connections after 1 hour
+    pool_pre_ping=True,     # Verify connections are alive
+    echo_pool="debug",      # Log pool events (dev only)
+)
+
+
+# Check pool status
+pool = engine.pool
+print(f"Pool size: {pool.size()}")
+print(f"Checked in: {pool.checkedin()}")
+print(f"Checked out: {pool.checkedout()}")
+print(f"Overflow: {pool.overflow()}")</code></pre>
+
+        <h3>psycopg2 Connection Pool</h3>
+
+<pre><code>from psycopg2 import pool as pg_pool
+from contextlib import contextmanager
+
+
+# Thread-safe connection pool
+connection_pool = pg_pool.ThreadedConnectionPool(
+    minconn=5,
+    maxconn=20,
+    dsn="postgresql://user:pass@localhost/mydb",
+)
+
+
+@contextmanager
+def get_pooled_connection():
+    """Get a connection from the pool, auto-return."""
+    conn = connection_pool.getconn()
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        connection_pool.putconn(conn)
+
+
+# Usage
+with get_pooled_connection() as conn:
+    with conn.cursor() as cur:
+        cur.execute("SELECT count(*) FROM users")
+        count = cur.fetchone()[0]
+        print(f"Total users: {count}")</code></pre>
+
+        <h2 id="transactions">7. Transactions & Error Handling</h2>
+
+        <p>Transactions ensure data integrity — either all operations succeed, or none do. Here's how to handle them properly.</p>
+
+<pre><code>import psycopg2
+from psycopg2 import errors as pg_errors
+
+
+def transfer_funds(from_id: int, to_id: int, amount: float):
+    """Transfer money between accounts with proper transaction handling."""
+    conn = get_pg_connection()
+    try:
+        with conn.cursor() as cur:
+            # Lock rows to prevent race conditions
+            cur.execute(
+                "SELECT balance FROM accounts WHERE id = %s FOR UPDATE",
+                (from_id,)
+            )
+            sender = cur.fetchone()
+            if not sender or sender["balance"] < amount:
+                raise ValueError("Insufficient funds")
+
+            # Debit sender
+            cur.execute(
+                "UPDATE accounts SET balance = balance - %s WHERE id = %s",
+                (amount, from_id)
+            )
+
+            # Credit receiver
+            cur.execute(
+                "UPDATE accounts SET balance = balance + %s WHERE id = %s",
+                (amount, to_id)
+            )
+
+            # Log the transfer
+            cur.execute(
+                """INSERT INTO transfers (from_id, to_id, amount)
+                   VALUES (%s, %s, %s)""",
+                (from_id, to_id, amount)
+            )
+
+        conn.commit()
+        print(f"Transferred ${amount:.2f}: {from_id} → {to_id}")
+
+    except ValueError as e:
+        conn.rollback()
+        print(f"Business error: {e}")
+
+    except pg_errors.SerializationFailure:
+        conn.rollback()
+        print("Concurrent modification — retry")
+
+    except pg_errors.DeadlockDetected:
+        conn.rollback()
+        print("Deadlock detected — retry")
+
+    except Exception as e:
+        conn.rollback()
+        print(f"Unexpected error: {e}")
+        raise
+
+    finally:
+        conn.close()</code></pre>
+
+        <h3>Savepoints for Partial Rollbacks</h3>
+
+<pre><code>def process_batch(items: list[dict]):
+    """Process items, skip failures without losing successes."""
+    conn = get_pg_connection()
+    processed = 0
+
+    try:
+        with conn.cursor() as cur:
+            for item in items:
+                # Create savepoint before each item
+                cur.execute("SAVEPOINT item_save")
+                try:
+                    cur.execute(
+                        """INSERT INTO items (name, value)
+                           VALUES (%s, %s)""",
+                        (item["name"], item["value"])
+                    )
+                    processed += 1
+                except psycopg2.IntegrityError:
+                    # Rollback just this item, continue with rest
+                    cur.execute("ROLLBACK TO SAVEPOINT item_save")
+                    print(f"Skipped duplicate: {item['name']}")
+
+        conn.commit()
+        print(f"Processed {processed}/{len(items)} items")
+
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()</code></pre>
+
+        <h2 id="async-db">8. Async Database Operations</h2>
+
+        <p>For high-concurrency applications (web servers, bots), async database operations prevent blocking.</p>
+
+<pre><code>import asyncio
+import aiosqlite
+
+
+async def async_sqlite_demo():
+    """SQLite with async/await."""
+    async with aiosqlite.connect("async_app.db") as db:
+        db.row_factory = aiosqlite.Row
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS events (
+                id INTEGER PRIMARY KEY,
+                type TEXT NOT NULL,
+                data TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        # Insert
+        await db.execute(
+            "INSERT INTO events (type, data) VALUES (?, ?)",
+            ("login", '{"user": "alice"}')
+        )
+        await db.commit()
+
+        # Query
+        async with db.execute(
+            "SELECT * FROM events ORDER BY created_at DESC LIMIT 10"
+        ) as cursor:
+            async for row in cursor:
+                print(f"{row['type']}: {row['data']}")
+
+
+asyncio.run(async_sqlite_demo())</code></pre>
+
+        <h3>Async PostgreSQL with asyncpg</h3>
+
+<pre><code>import asyncio
+import asyncpg
+
+
+async def async_pg_demo():
+    """High-performance async PostgreSQL."""
+    # Connection pool
+    pool = await asyncpg.create_pool(
+        "postgresql://user:pass@localhost/mydb",
+        min_size=5,
+        max_size=20,
+    )
+
+    async with pool.acquire() as conn:
+        # Create table
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS metrics (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                value DOUBLE PRECISION NOT NULL,
+                recorded_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
+
+        # Insert with RETURNING
+        row = await conn.fetchrow(
+            """INSERT INTO metrics (name, value)
+               VALUES ($1, $2)
+               RETURNING id, recorded_at""",
+            "cpu_usage", 45.2
+        )
+        print(f"Inserted metric {row['id']}")
+
+        # Bulk insert (very fast)
+        data = [(f"metric_{i}", float(i)) for i in range(1000)]
+        await conn.executemany(
+            "INSERT INTO metrics (name, value) VALUES ($1, $2)",
+            data
+        )
+
+        # Query
+        rows = await conn.fetch(
+            """SELECT name, avg(value) as avg_value
+               FROM metrics
+               GROUP BY name
+               ORDER BY avg_value DESC
+               LIMIT 10"""
+        )
+        for row in rows:
+            print(f"{row['name']}: {row['avg_value']:.1f}")
+
+    await pool.close()
+
+
+asyncio.run(async_pg_demo())</code></pre>
+
+        <div class="tip">
+            <strong>asyncpg vs psycopg2:</strong> asyncpg is 2-5x faster for async workloads. Use it for web servers (FastAPI, aiohttp). Use psycopg2 for scripts, <a href="data-pipeline-python.html">data pipelines</a>, and synchronous code.
+        </div>
+
+        <h2 id="testing">9. Testing with In-Memory SQLite</h2>
+
+        <p>In-memory SQLite databases are perfect for testing — fast, isolated, no cleanup needed.</p>
+
+<pre><code>import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+
+@pytest.fixture
+def db_session():
+    """Create a fresh in-memory database for each test."""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    yield session
+
+    session.close()
+    engine.dispose()
+
+
+def test_create_user(db_session):
+    user = User(email="test@example.com", name="Test User")
+    db_session.add(user)
+    db_session.commit()
+
+    found = db_session.query(User).filter_by(email="test@example.com").first()
+    assert found is not None
+    assert found.name == "Test User"
+
+
+def test_user_orders(db_session):
+    user = User(email="buyer@example.com", name="Buyer")
+    order1 = Order(user=user, total=25.00)
+    order2 = Order(user=user, total=75.00)
+    db_session.add_all([user, order1, order2])
+    db_session.commit()
+
+    assert len(user.orders) == 2
+    assert sum(o.total for o in user.orders) == 100.00
+
+
+def test_duplicate_email_rejected(db_session):
+    db_session.add(User(email="one@example.com", name="One"))
+    db_session.commit()
+
+    db_session.add(User(email="one@example.com", name="Duplicate"))
+    with pytest.raises(Exception):  # IntegrityError
+        db_session.commit()</code></pre>
+
+        <h2 id="performance">10. Performance Tips & Indexing</h2>
+
+        <h3>Index Strategy</h3>
+
+<pre><code>from sqlalchemy import Index, text
+
+
+# Single column index — for WHERE clauses
+Index("idx_users_email", User.email)
+
+# Composite index — for queries filtering on multiple columns
+# Column ORDER matters: put high-cardinality columns first
+Index("idx_orders_user_date", Order.user_id, Order.created_at)
+
+# Partial index (PostgreSQL) — index only relevant rows
+Index(
+    "idx_active_users",
+    User.email,
+    postgresql_where=text("is_active = true")
+)
+
+# Covering index — includes extra columns to avoid table lookups
+Index(
+    "idx_orders_covering",
+    Order.user_id, Order.status,
+    postgresql_include=["total"]
+)</code></pre>
+
+        <h3>Query Optimization</h3>
+
+<pre><code># BAD: N+1 query problem
+users = session.query(User).all()
+for user in users:
+    print(user.orders)  # Separate query for each user!
+
+# GOOD: Eager loading with joinedload
+from sqlalchemy.orm import joinedload
+
+users = session.query(User).options(
+    joinedload(User.orders)
+).all()
+# Single query with JOIN — orders already loaded
+
+# GOOD: Subquery loading for large datasets
+from sqlalchemy.orm import subqueryload
+
+users = session.query(User).options(
+    subqueryload(User.orders)
+).filter(User.is_active == True).all()
+# Two queries total, regardless of user count</code></pre>
+
+        <h3>Batch Processing Large Datasets</h3>
+
+<pre><code>def process_large_table(engine, batch_size: int = 1000):
+    """Process millions of rows without loading all into memory."""
+    Session = sessionmaker(bind=engine)
+
+    offset = 0
+    total = 0
+
+    while True:
+        session = Session()
+        try:
+            batch = session.query(User).filter(
+                User.is_active == True
+            ).order_by(
+                User.id
+            ).offset(offset).limit(batch_size).all()
+
+            if not batch:
+                break
+
+            for user in batch:
+                # Process each user
+                pass
+
+            total += len(batch)
+            offset += batch_size
+            print(f"Processed {total} users...")
+
+        finally:
+            session.close()
+
+    print(f"Done: {total} users processed")
+
+
+# Even better: use server-side cursor (PostgreSQL)
+def stream_large_query(engine):
+    """Stream results without loading all into memory."""
+    with engine.connect() as conn:
+        result = conn.execution_options(
+            stream_results=True
+        ).execute(
+            text("SELECT * FROM users WHERE is_active = true")
+        )
+
+        for chunk in result.partitions(1000):
+            for row in chunk:
+                process_row(row)</code></pre>
+
+        <h2 id="best-practices">11. Best Practices Checklist</h2>
+
+        <ul>
+            <li><strong>Always use parameterized queries</strong> — never format SQL strings with user input</li>
+            <li><strong>Use connection pooling</strong> in production — don't open/close connections per request</li>
+            <li><strong>Set timeouts</strong> — both connection and query timeouts prevent hung operations</li>
+            <li><strong>Enable WAL mode</strong> for SQLite — dramatically improves concurrent read/write performance</li>
+            <li><strong>Add indexes for WHERE/JOIN columns</strong> — but don't over-index (slows writes)</li>
+            <li><strong>Use migrations</strong> (Alembic) — never modify production schemas by hand</li>
+            <li><strong>Handle transactions explicitly</strong> — commit on success, rollback on failure</li>
+            <li><strong>Test with in-memory SQLite</strong> — fast, isolated, no cleanup</li>
+            <li><strong>Monitor slow queries</strong> — log queries over 100ms threshold</li>
+            <li><strong>Batch large operations</strong> — don't load millions of rows into memory</li>
+            <li><strong>Use RETURNING</strong> (PostgreSQL) — avoid extra SELECT after INSERT/UPDATE</li>
+            <li><strong>Close connections</strong> — use context managers to guarantee cleanup</li>
+        </ul>
+
+        <div class="cta">
+            <h3>50+ Production-Ready Python Scripts</h3>
+            <p>Database utilities, API integrations, automation tools — all tested and documented. Save weeks of development time.</p>
+            <a href="../">Get the AI Toolkit →</a>
+        </div>
+
+        <div class="related">
+            <h3>Related Articles</h3>
+            <a href="data-pipeline-python.html">Build a Data Pipeline in Python — ETL from Scratch</a>
+            <a href="api-integration-python.html">Python API Integration — Connect Any Service</a>
+            <a href="cli-tool-python.html">Build Professional CLI Tools in Python</a>
+            <a href="python-automation-scripts.html">5 Python Scripts Every Developer Should Have</a>
+            <a href="task-scheduling-python.html">Task Scheduling & Cron Jobs in Python</a>
+        </div>
+    </div>
+</body>
+</html>
