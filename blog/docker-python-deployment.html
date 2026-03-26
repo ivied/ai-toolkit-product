@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dockerize Python Apps — From Development to Production Deployment</title>
+    <meta name="description" content="Complete guide to Docker for Python developers. Dockerfiles, multi-stage builds, Docker Compose, CI/CD with GitHub Actions, production best practices, and debugging containers.">
+    <meta name="keywords" content="docker python, dockerize python app, docker compose python, python dockerfile, multi-stage build python, docker production python, github actions docker, python container deployment">
+    <meta property="og:title" content="Dockerize Python Apps — From Development to Production Deployment">
+    <meta property="og:description" content="Learn to containerize Python applications for production. Multi-stage builds, Docker Compose, CI/CD pipelines, security hardening, and debugging techniques.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/docker-python-deployment.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/docker-python-deployment.html">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; color: #1a1a2e; background: #fafafa; }
+        .container { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2.2rem; margin-bottom: 0.5rem; color: #16213e; }
+        h2 { font-size: 1.6rem; margin: 2.5rem 0 1rem; color: #16213e; border-bottom: 2px solid #e94560; padding-bottom: 0.3rem; }
+        h3 { font-size: 1.3rem; margin: 2rem 0 0.8rem; color: #0f3460; }
+        p { margin-bottom: 1.2rem; }
+        .meta { color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: #1a1a2e; color: #e0e0e0; padding: 1.2rem; border-radius: 8px; overflow-x: auto; margin: 1.2rem 0; font-size: 0.9rem; line-height: 1.5; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; }
+        .inline-code { background: #eef; padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.9em; color: #0f3460; }
+        ul, ol { margin: 1rem 0 1.2rem 1.5rem; }
+        li { margin-bottom: 0.5rem; }
+        .tip { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 1rem; margin: 1.2rem 0; border-radius: 0 8px 8px 0; }
+        .warning { background: #fff3e0; border-left: 4px solid #ff9800; padding: 1rem; margin: 1.2rem 0; border-radius: 0 8px 8px 0; }
+        .cta { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 12px; text-align: center; margin: 3rem 0; }
+        .cta a { color: white; text-decoration: none; font-weight: bold; font-size: 1.1rem; background: rgba(255,255,255,0.2); padding: 0.8rem 2rem; border-radius: 8px; display: inline-block; margin-top: 1rem; }
+        .cta a:hover { background: rgba(255,255,255,0.3); }
+        a { color: #e94560; }
+        .nav { margin-bottom: 2rem; font-size: 0.9rem; }
+        .nav a { color: #666; text-decoration: none; }
+        .nav a:hover { color: #e94560; }
+        .related { background: #f0f0f5; padding: 1.5rem; border-radius: 8px; margin-top: 2rem; }
+        .related h3 { margin-top: 0; }
+        .related a { display: block; margin: 0.5rem 0; }
+        .toc { background: #f5f5ff; padding: 1.5rem; border-radius: 8px; margin: 1.5rem 0; }
+        .toc ul { list-style: none; margin-left: 0; }
+        .toc li { margin-bottom: 0.3rem; }
+        .toc a { text-decoration: none; color: #0f3460; }
+        .toc a:hover { color: #e94560; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="../">← Home</a> &middot; <a href="./">Blog</a>
+        </div>
+
+        <h1>Dockerize Python Apps — From Development to Production Deployment</h1>
+        <p class="meta">By Kristy &middot; March 2026 &middot; 20 min read</p>
+
+        <div class="toc">
+            <strong>Table of Contents</strong>
+            <ul>
+                <li><a href="#why-docker">Why Docker for Python?</a></li>
+                <li><a href="#first-dockerfile">Your First Dockerfile</a></li>
+                <li><a href="#dockerignore">.dockerignore — Keep Your Images Clean</a></li>
+                <li><a href="#multi-stage">Multi-Stage Builds for Smaller Images</a></li>
+                <li><a href="#compose">Docker Compose for Multi-Service Apps</a></li>
+                <li><a href="#env-secrets">Environment Variables and Secrets</a></li>
+                <li><a href="#health-checks">Health Checks and Restart Policies</a></li>
+                <li><a href="#ci-cd">CI/CD with GitHub Actions</a></li>
+                <li><a href="#production">Production Best Practices</a></li>
+                <li><a href="#logging">Logging and Monitoring in Containers</a></li>
+                <li><a href="#debugging">Debugging Containers</a></li>
+                <li><a href="#pitfalls">Common Pitfalls</a></li>
+                <li><a href="#complete">Complete Example: Production-Ready Setup</a></li>
+            </ul>
+        </div>
+
+        <h2 id="why-docker">Why Docker for Python?</h2>
+
+        <p>"It works on my machine" is the most expensive sentence in software engineering. Docker eliminates it entirely. Your Python app runs in the same environment everywhere — your laptop, CI server, staging, and production. No more version mismatches, missing system libraries, or broken virtual environments.</p>
+
+        <p>Docker is especially valuable for Python because:</p>
+
+        <ul>
+            <li><strong>Dependency isolation</strong> — No more conflicts between projects that need different Python or library versions</li>
+            <li><strong>Reproducible builds</strong> — Pin everything, from the OS to the last pip package</li>
+            <li><strong>Easy deployment</strong> — Ship a single image to any cloud, VPS, or Kubernetes cluster</li>
+            <li><strong>Multi-service apps</strong> — Run Python + PostgreSQL + Redis + Celery with one command</li>
+        </ul>
+
+        <h2 id="first-dockerfile">Your First Dockerfile</h2>
+
+        <p>Let's start with a basic Flask application. Here's the project structure:</p>
+
+<pre><code>my-app/
+├── app.py
+├── requirements.txt
+├── Dockerfile
+└── .dockerignore</code></pre>
+
+        <p>The application:</p>
+
+<pre><code># app.py
+from flask import Flask, jsonify
+import os
+
+app = Flask(__name__)
+
+@app.route("/")
+def hello():
+    return jsonify({
+        "message": "Hello from Docker!",
+        "environment": os.getenv("FLASK_ENV", "production"),
+        "version": os.getenv("APP_VERSION", "0.1.0")
+    })
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "healthy"}), 200
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)</code></pre>
+
+        <p>Requirements:</p>
+
+<pre><code># requirements.txt
+flask==3.1.0
+gunicorn==23.0.0</code></pre>
+
+        <p>And the Dockerfile:</p>
+
+<pre><code># Dockerfile
+FROM python:3.12-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies first (Docker layer caching)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create non-root user
+RUN useradd --create-home appuser
+USER appuser
+
+# Expose port
+EXPOSE 5000
+
+# Run with gunicorn (production WSGI server)
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]</code></pre>
+
+        <p>Build and run:</p>
+
+<pre><code># Build the image
+docker build -t my-python-app .
+
+# Run the container
+docker run -p 5000:5000 my-python-app
+
+# Run in background
+docker run -d --name my-app -p 5000:5000 my-python-app
+
+# Check it's running
+curl http://localhost:5000/health</code></pre>
+
+        <div class="tip">
+            <strong>💡 Why <code>COPY requirements.txt</code> before <code>COPY . .</code>?</strong><br>
+            Docker caches each layer. If your code changes but requirements don't, Docker reuses the cached dependency layer — saving minutes on rebuilds. Always copy and install dependencies before copying your application code.
+        </div>
+
+        <h2 id="dockerignore">.dockerignore — Keep Your Images Clean</h2>
+
+        <p>Without <span class="inline-code">.dockerignore</span>, Docker copies everything into the build context — including virtual environments, <span class="inline-code">.git</span>, test data, and IDE configs. This bloats your image and slows builds.</p>
+
+<pre><code># .dockerignore
+__pycache__
+*.pyc
+*.pyo
+.git
+.gitignore
+.env
+.env.*
+.venv
+venv
+env
+*.egg-info
+dist
+build
+.pytest_cache
+.mypy_cache
+.coverage
+htmlcov
+node_modules
+*.md
+!README.md
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+tests/
+docs/
+*.log</code></pre>
+
+        <div class="warning">
+            <strong>⚠️ Never include <code>.env</code> files in your Docker image.</strong> They contain secrets. Use environment variables at runtime or Docker secrets instead.
+        </div>
+
+        <h2 id="multi-stage">Multi-Stage Builds for Smaller Images</h2>
+
+        <p>A standard <span class="inline-code">python:3.12</span> image is ~1GB. With multi-stage builds, you can get your final image down to 50-100MB. The trick: use a full image to build dependencies, then copy only what you need into a slim final image.</p>
+
+<pre><code># Multi-stage Dockerfile
+# Stage 1: Build dependencies
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# Install build tools (needed for packages with C extensions)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+
+# Stage 2: Production image
+FROM python:3.12-slim AS production
+
+WORKDIR /app
+
+# Install runtime-only dependencies (no compilers)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libpq5 curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
+
+# Copy application
+COPY . .
+
+# Security: non-root user
+RUN useradd --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 5000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "app:app"]</code></pre>
+
+        <p>Compare the sizes:</p>
+
+<pre><code># Check image sizes
+docker images | grep my-app
+
+# Typical results:
+# my-app-full      latest   1.2GB    (single stage, python:3.12)
+# my-app-slim      latest   180MB    (single stage, python:3.12-slim)
+# my-app-multi     latest   95MB     (multi-stage build)</code></pre>
+
+        <h3>Alpine Images — Even Smaller</h3>
+
+        <p>Alpine-based images are tiny (~20MB base), but they use <span class="inline-code">musl</span> instead of <span class="inline-code">glibc</span>. Many Python packages with C extensions won't compile or will behave differently. Use Alpine only if you understand the trade-offs:</p>
+
+<pre><code># Alpine-based image (use with caution)
+FROM python:3.12-alpine AS builder
+
+RUN apk add --no-cache gcc musl-dev libffi-dev postgresql-dev
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.12-alpine
+RUN apk add --no-cache libpq curl
+COPY --from=builder /install /usr/local
+COPY . /app
+WORKDIR /app
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]</code></pre>
+
+        <div class="warning">
+            <strong>⚠️ Alpine pitfalls:</strong> numpy, pandas, scipy, and other scientific packages can take 10-20 minutes to build on Alpine (they compile from source instead of using pre-built wheels). Stick with <code>-slim</code> for data science and ML projects.
+        </div>
+
+        <h2 id="compose">Docker Compose for Multi-Service Apps</h2>
+
+        <p>Real Python applications need databases, caches, task queues, and background workers. Docker Compose orchestrates all of them with a single YAML file.</p>
+
+<pre><code># docker-compose.yml
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://app:secret@db:5432/myapp
+      - REDIS_URL=redis://redis:6379/0
+      - FLASK_ENV=development
+    volumes:
+      - .:/app  # Live reload in development
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build: .
+    command: celery -A tasks worker --loglevel=info --concurrency=2
+    environment:
+      - DATABASE_URL=postgresql://app:secret@db:5432/myapp
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  beat:
+    build: .
+    command: celery -A tasks beat --loglevel=info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: myapp
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d myapp"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:</code></pre>
+
+        <p>Common Docker Compose commands:</p>
+
+<pre><code># Start everything
+docker compose up -d
+
+# View logs (follow mode)
+docker compose logs -f web worker
+
+# Restart a single service
+docker compose restart web
+
+# Rebuild after code changes
+docker compose up -d --build web
+
+# Scale workers
+docker compose up -d --scale worker=3
+
+# Stop everything (keep volumes)
+docker compose down
+
+# Stop and remove volumes (⚠️ deletes database data)
+docker compose down -v</code></pre>
+
+        <h3>Development vs Production Compose Files</h3>
+
+        <p>Use overrides for different environments:</p>
+
+<pre><code># docker-compose.override.yml (auto-loaded in development)
+services:
+  web:
+    command: flask run --host=0.0.0.0 --port=5000 --reload
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_DEBUG=1
+      - FLASK_ENV=development</code></pre>
+
+<pre><code># docker-compose.prod.yml
+services:
+  web:
+    volumes: []  # No bind mounts in production
+    environment:
+      - FLASK_ENV=production
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"</code></pre>
+
+<pre><code># Run production config
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d</code></pre>
+
+        <h2 id="env-secrets">Environment Variables and Secrets</h2>
+
+        <p>Never hardcode secrets in Dockerfiles or images. Here are three approaches, from simplest to most secure:</p>
+
+        <h3>Method 1: .env File (Development)</h3>
+
+<pre><code># .env (never commit this file!)
+DATABASE_URL=postgresql://app:secret@db:5432/myapp
+REDIS_URL=redis://redis:6379/0
+SECRET_KEY=dev-secret-key-change-in-production
+API_KEY=sk-test-1234567890</code></pre>
+
+<pre><code># docker-compose.yml
+services:
+  web:
+    env_file:
+      - .env</code></pre>
+
+        <h3>Method 2: Docker Secrets (Swarm / Production)</h3>
+
+<pre><code># Create secrets
+echo "super-secure-password" | docker secret create db_password -
+echo "sk-prod-abc123" | docker secret create api_key -
+
+# docker-compose.yml (Swarm mode)
+services:
+  web:
+    secrets:
+      - db_password
+      - api_key
+    environment:
+      - DB_PASSWORD_FILE=/run/secrets/db_password
+
+secrets:
+  db_password:
+    external: true
+  api_key:
+    external: true</code></pre>
+
+        <p>Read secrets in Python:</p>
+
+<pre><code># config.py
+import os
+from pathlib import Path
+
+
+def get_secret(name: str, default: str = "") -> str:
+    """Read from Docker secret file or env variable."""
+    # Check for Docker secret file first
+    secret_file = Path(f"/run/secrets/{name}")
+    if secret_file.exists():
+        return secret_file.read_text().strip()
+
+    # Fall back to environment variable
+    return os.getenv(name.upper(), default)
+
+
+# Usage
+DATABASE_PASSWORD = get_secret("db_password")
+API_KEY = get_secret("api_key")</code></pre>
+
+        <h3>Method 3: Build-time vs Runtime Variables</h3>
+
+<pre><code># Dockerfile — build-time args (NOT for secrets)
+ARG PYTHON_VERSION=3.12
+FROM python:${PYTHON_VERSION}-slim
+
+# Build-time arg (visible in image layers — don't use for secrets!)
+ARG APP_VERSION=0.1.0
+ENV APP_VERSION=${APP_VERSION}
+
+# Runtime env (set when container starts)
+ENV FLASK_ENV=production
+ENV WORKERS=4
+
+CMD gunicorn --bind 0.0.0.0:5000 --workers ${WORKERS} app:app</code></pre>
+
+<pre><code># Build with args
+docker build --build-arg APP_VERSION=1.2.3 -t my-app:1.2.3 .
+
+# Run with env overrides
+docker run -e WORKERS=8 -e SECRET_KEY=prod-key my-app:1.2.3</code></pre>
+
+        <h2 id="health-checks">Health Checks and Restart Policies</h2>
+
+        <p>Containers crash. Networks hiccup. Databases restart. Health checks let Docker (and orchestrators like Kubernetes) detect and recover from failures automatically.</p>
+
+<pre><code># Dockerfile health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1</code></pre>
+
+        <p>A proper health check endpoint in Python:</p>
+
+<pre><code># health.py
+from flask import jsonify
+import redis
+import psycopg2
+
+
+def register_health_routes(app, config):
+    @app.route("/health")
+    def health():
+        """Basic liveness check — is the process running?"""
+        return jsonify({"status": "ok"}), 200
+
+    @app.route("/ready")
+    def readiness():
+        """Readiness check — can we serve traffic?"""
+        checks = {}
+        healthy = True
+
+        # Database check
+        try:
+            conn = psycopg2.connect(config["DATABASE_URL"])
+            conn.execute("SELECT 1")
+            conn.close()
+            checks["database"] = "ok"
+        except Exception as e:
+            checks["database"] = str(e)
+            healthy = False
+
+        # Redis check
+        try:
+            r = redis.from_url(config["REDIS_URL"])
+            r.ping()
+            checks["redis"] = "ok"
+        except Exception as e:
+            checks["redis"] = str(e)
+            healthy = False
+
+        status_code = 200 if healthy else 503
+        return jsonify({
+            "status": "ready" if healthy else "not_ready",
+            "checks": checks
+        }), status_code</code></pre>
+
+        <p>Restart policies for Docker Compose:</p>
+
+<pre><code>services:
+  web:
+    restart: unless-stopped     # Restart on crash, not on manual stop
+
+  worker:
+    restart: on-failure         # Only restart if exit code != 0
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3         # Give up after 3 crashes
+        window: 120s</code></pre>
+
+        <div class="tip">
+            <strong>💡 Start period matters.</strong> Set <code>--start-period</code> to cover your app's startup time (loading models, running migrations, warming caches). Health checks during this window don't count as failures.
+        </div>
+
+        <h2 id="ci-cd">CI/CD with GitHub Actions</h2>
+
+        <p>Automate building, testing, and deploying your Docker image with GitHub Actions:</p>
+
+<pre><code># .github/workflows/docker.yml
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Run tests
+        run: pytest --cov=app tests/
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            APP_VERSION=${{ github.sha }}</code></pre>
+
+        <h3>Deploy to a VPS via SSH</h3>
+
+<pre><code>  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: deploy
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/my-app
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f</code></pre>
+
+        <h2 id="production">Production Best Practices</h2>
+
+        <h3>1. Always Run as Non-Root</h3>
+
+<pre><code># Bad — running as root (default)
+CMD ["python", "app.py"]
+
+# Good — create and switch to non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+USER appuser
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]</code></pre>
+
+        <h3>2. Use Specific Base Image Tags</h3>
+
+<pre><code># Bad — tag can shift to a new version anytime
+FROM python:3
+
+# Better — major.minor pinned
+FROM python:3.12-slim
+
+# Best — SHA digest for reproducibility
+FROM python:3.12-slim@sha256:abc123...</code></pre>
+
+        <h3>3. Minimize Layers and Image Size</h3>
+
+<pre><code># Bad — each RUN creates a layer
+RUN apt-get update
+RUN apt-get install -y curl
+RUN apt-get install -y libpq-dev
+RUN rm -rf /var/lib/apt/lists/*
+
+# Good — combine commands, clean up in same layer
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl libpq-dev && \
+    rm -rf /var/lib/apt/lists/*</code></pre>
+
+        <h3>4. Use Gunicorn Properly</h3>
+
+<pre><code># gunicorn.conf.py
+import multiprocessing
+
+# Workers: 2-4 per CPU core
+workers = multiprocessing.cpu_count() * 2 + 1
+worker_class = "gthread"
+threads = 2
+
+# Timeouts
+timeout = 30
+graceful_timeout = 30
+keepalive = 5
+
+# Binding
+bind = "0.0.0.0:5000"
+
+# Logging
+accesslog = "-"
+errorlog = "-"
+loglevel = "info"
+
+# Security
+limit_request_line = 4094
+limit_request_fields = 100</code></pre>
+
+<pre><code>CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]</code></pre>
+
+        <h3>5. Handle Signals for Graceful Shutdown</h3>
+
+<pre><code># app.py — graceful shutdown
+import signal
+import sys
+
+
+def graceful_shutdown(signum, frame):
+    """Handle SIGTERM for graceful shutdown in Docker."""
+    print(f"Received signal {signum}, shutting down gracefully...")
+    # Close database connections
+    # Finish current requests
+    # Flush logs
+    sys.exit(0)
+
+
+signal.signal(signal.SIGTERM, graceful_shutdown)
+signal.signal(signal.SIGINT, graceful_shutdown)</code></pre>
+
+        <div class="tip">
+            <strong>💡 Use <code>exec</code> form for CMD.</strong> <code>CMD ["gunicorn", "app:app"]</code> (exec form) runs gunicorn as PID 1, so it receives SIGTERM directly. <code>CMD gunicorn app:app</code> (shell form) wraps it in <code>/bin/sh -c</code>, and the shell may not forward signals.
+        </div>
+
+        <h3>6. Pin Dependency Versions</h3>
+
+<pre><code># Generate locked requirements
+pip freeze > requirements.txt
+
+# Or use pip-compile for better management
+pip install pip-tools
+pip-compile requirements.in --output-file requirements.txt
+
+# requirements.in (what you specify)
+flask>=3.0,<4.0
+sqlalchemy>=2.0
+
+# requirements.txt (what pip-compile generates — pinned)
+flask==3.1.0
+sqlalchemy==2.0.36
+# ... all transitive deps pinned</code></pre>
+
+        <h2 id="logging">Logging and Monitoring in Containers</h2>
+
+        <p>Containers are ephemeral — when they die, their filesystem goes with them. Write logs to stdout/stderr (Docker captures them), not to files inside the container.</p>
+
+<pre><code># logging_config.py
+import logging
+import sys
+import json
+from datetime import datetime, timezone
+
+
+class JSONFormatter(logging.Formatter):
+    """Structured JSON logging for containers."""
+
+    def format(self, record):
+        log_data = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+
+        if record.exc_info and record.exc_info[0]:
+            log_data["exception"] = self.formatException(record.exc_info)
+
+        # Add extra fields
+        for key in ("request_id", "user_id", "endpoint", "duration_ms"):
+            if hasattr(record, key):
+                log_data[key] = getattr(record, key)
+
+        return json.dumps(log_data)
+
+
+def setup_logging():
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(JSONFormatter())
+
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+    root.addHandler(handler)
+
+    # Reduce noise from libraries
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)</code></pre>
+
+        <p>View and manage container logs:</p>
+
+<pre><code># View recent logs
+docker logs my-app --tail 100
+
+# Follow logs in real-time
+docker logs -f my-app
+
+# Logs since a specific time
+docker logs --since 2026-03-26T00:00:00 my-app
+
+# Filter JSON logs with jq
+docker logs my-app 2>&1 | jq 'select(.level == "ERROR")'
+
+# Log rotation (prevent disk exhaustion)
+# docker-compose.yml
+services:
+  web:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"</code></pre>
+
+        <h3>Resource Monitoring</h3>
+
+<pre><code># Real-time container stats
+docker stats
+
+# One-shot stats
+docker stats --no-stream --format \
+  "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"
+
+# Export metrics for Prometheus
+# Add to your Flask app:
+from prometheus_flask_instrumentator import Instrumentator
+
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")</code></pre>
+
+        <h2 id="debugging">Debugging Containers</h2>
+
+        <p>When things go wrong inside a container, you need to get inside and look around:</p>
+
+<pre><code># Shell into a running container
+docker exec -it my-app /bin/bash
+
+# Shell into a stopped/crashed container (start a new one from image)
+docker run -it --entrypoint /bin/bash my-app:latest
+
+# Check what's running inside
+docker exec my-app ps aux
+
+# Inspect container details
+docker inspect my-app | jq '.[0].State'
+
+# View container's environment variables
+docker exec my-app env | sort
+
+# Check file system
+docker exec my-app ls -la /app
+
+# Copy files out for inspection
+docker cp my-app:/app/logs/error.log ./debug-error.log
+
+# Watch container events
+docker events --filter container=my-app</code></pre>
+
+        <h3>Debug a Build</h3>
+
+<pre><code># Build with verbose output
+docker build --progress=plain --no-cache -t my-app .
+
+# Build up to a specific stage
+docker build --target builder -t my-app-debug .
+
+# Inspect image layers
+docker history my-app --no-trunc
+
+# Check what's in the image
+docker run --rm my-app:latest find /app -type f | head -50</code></pre>
+
+        <h3>Network Debugging</h3>
+
+<pre><code># Check container networking
+docker network ls
+docker network inspect my-app_default
+
+# Test connectivity between containers
+docker exec web ping db
+docker exec web curl http://redis:6379
+
+# Check port bindings
+docker port my-app</code></pre>
+
+        <h2 id="pitfalls">Common Pitfalls</h2>
+
+        <h3>Pitfall 1: Running as Root</h3>
+        <p>By default, Docker containers run as root. If an attacker exploits your app, they have root access to the container — and potentially to the host via volume mounts. Always use a non-root user.</p>
+
+        <h3>Pitfall 2: Not Using .dockerignore</h3>
+        <p>Without it, your <span class="inline-code">.git</span> directory (often hundreds of MB), virtual environments, and test fixtures all get copied into the build context. Builds become slow and images bloat.</p>
+
+        <h3>Pitfall 3: Using <code>latest</code> Tag in Production</h3>
+        <p><span class="inline-code">latest</span> is mutable — it points to whatever was pushed last. Use immutable tags (git SHA, version number, or digest) so you can roll back reliably.</p>
+
+        <h3>Pitfall 4: Forgetting to Handle PID 1</h3>
+        <p>The first process in a container (PID 1) is special — it must handle signals and reap zombie processes. Use <span class="inline-code">exec</span> form CMD, or add <span class="inline-code">--init</span> flag to <span class="inline-code">docker run</span> for a lightweight init system.</p>
+
+<pre><code># Add init process (handles signals and zombie reaping)
+docker run --init my-app
+
+# Or in docker-compose.yml
+services:
+  web:
+    init: true</code></pre>
+
+        <h3>Pitfall 5: Storing Data in Containers</h3>
+        <p>Container filesystems are ephemeral. When the container stops, data is gone. Always use volumes for persistent data:</p>
+
+<pre><code>services:
+  db:
+    volumes:
+      - pgdata:/var/lib/postgresql/data   # Named volume (persistent)
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Bind mount (seed data)</code></pre>
+
+        <h3>Pitfall 6: Not Setting Memory Limits</h3>
+        <p>A Python app with a memory leak will eventually eat all host memory and crash everything. Set limits:</p>
+
+<pre><code>services:
+  web:
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M</code></pre>
+
+        <h2 id="complete">Complete Example: Production-Ready Setup</h2>
+
+        <p>Here's a complete, production-ready Docker setup for a Python web application with a database, cache, background workers, and monitoring:</p>
+
+<pre><code># Dockerfile (production)
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+
+FROM python:3.12-slim
+
+# Security: non-root user
+RUN groupadd -r app && useradd -r -g app -d /app -s /bin/bash app
+
+# Runtime dependencies only
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libpq5 curl tini && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy Python packages
+COPY --from=builder /install /usr/local
+
+WORKDIR /app
+COPY --chown=app:app . .
+
+USER app
+
+EXPOSE 5000
+
+# tini handles PID 1 responsibilities
+ENTRYPOINT ["tini", "--"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]</code></pre>
+
+<pre><code># docker-compose.yml (production)
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    init: true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  worker:
+    build: .
+    command: celery -A tasks worker -l info -c 2
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  beat:
+    build: .
+    command: celery -A tasks beat -l info
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-myapp}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-app} -d ${DB_NAME:-myapp}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:
+  redisdata:</code></pre>
+
+        <p>Deploy script:</p>
+
+<pre><code>#!/bin/bash
+# deploy.sh — zero-downtime deployment
+set -euo pipefail
+
+IMAGE_TAG="${1:?Usage: deploy.sh <image-tag>}"
+COMPOSE_FILE="docker-compose.yml"
+
+echo "🚀 Deploying version: $IMAGE_TAG"
+
+# Pull new images
+docker compose -f "$COMPOSE_FILE" pull
+
+# Rolling update — restart one at a time
+docker compose -f "$COMPOSE_FILE" up -d --no-deps --build web
+sleep 5
+
+# Check health
+for i in $(seq 1 10); do
+    if curl -sf http://localhost:5000/health > /dev/null; then
+        echo "✅ Web service healthy"
+        break
+    fi
+    echo "⏳ Waiting for health check... ($i/10)"
+    sleep 3
+done
+
+# Update workers
+docker compose -f "$COMPOSE_FILE" up -d --no-deps --build worker beat
+
+# Cleanup old images
+docker image prune -f
+
+echo "✅ Deployment complete: $IMAGE_TAG"</code></pre>
+
+        <div class="cta">
+            <h3>Want 50+ Ready-to-Use Python Automation Scripts?</h3>
+            <p>The AI Toolkit includes deployment scripts, web scrapers, API integrations, data pipelines, email automation, and more — all production-ready with Docker support and error handling.</p>
+            <a href="https://payhip.com/b/8BKSl">Get the AI Toolkit — $19</a>
+        </div>
+
+        <div class="related">
+            <h3>Related Articles</h3>
+            <a href="task-scheduling-python.html">Task Scheduling & Cron Jobs in Python — Automate Anything on a Timer</a>
+            <a href="database-operations-python.html">Python Database Operations — SQLite, PostgreSQL & SQLAlchemy Guide</a>
+            <a href="data-pipeline-python.html">Build a Data Pipeline in Python — ETL from Scratch</a>
+            <a href="cli-tool-python.html">Build a Professional CLI Tool in Python</a>
+            <a href="testing-python.html">Python Testing — pytest, Mocking & CI Integration</a>
+            <a href="api-integration-python.html">Automate API Integrations with Python</a>
+            <a href="web-scraping-python-guide.html">Web Scraping with Python in 2026</a>
+            <a href="email-automation-python.html">Automate Email with Python — Send, Read & Process Like a Pro</a>
+        </div>
+    </div>
+</body>
+</html>
