@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Actions for Python — CI/CD Pipeline from Scratch (2026)</title>
+    <meta name="description" content="Complete guide to GitHub Actions for Python projects. Automated testing, linting, type checking, Docker builds, PyPI publishing, matrix testing, caching, and production deployment workflows.">
+    <meta name="keywords" content="github actions python, ci cd python, python testing pipeline, github actions docker, pypi publish github actions, python automation ci, github workflow python">
+    <meta property="og:title" content="GitHub Actions for Python — CI/CD Pipeline from Scratch (2026)">
+    <meta property="og:description" content="Build production CI/CD pipelines for Python with GitHub Actions. Testing, linting, Docker, PyPI, deployment — all automated.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/github-actions-python.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/github-actions-python.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>GitHub Actions for Python — CI/CD Pipeline from Scratch</h1>
+            <p class="meta">March 2026 · 20 min read · Python, GitHub Actions, CI/CD, DevOps</p>
+
+            <p>Every serious Python project needs automated testing, linting, and deployment. GitHub Actions makes this free (for public repos) and straightforward. This guide builds a complete CI/CD pipeline — from running pytest on every push to deploying Docker containers and publishing to PyPI.</p>
+
+            <h2>Your First Workflow</h2>
+
+            <p>GitHub Actions workflows live in <span class="inline-code">.github/workflows/</span>. Here's the minimal useful one:</p>
+
+<pre><code># .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short</code></pre>
+
+            <p>That's it. Every push and PR now triggers tests automatically. Let's make it production-grade.</p>
+
+            <h2>Matrix Testing (Multiple Python Versions)</h2>
+
+            <p>Test against multiple Python versions and operating systems to catch compatibility issues early:</p>
+
+<pre><code># .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false  # Don't cancel other jobs if one fails
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        exclude:
+          # Skip expensive combinations
+          - os: macos-latest
+            python-version: "3.10"
+          - os: windows-latest
+            python-version: "3.10"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements*.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage
+        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}</code></pre>
+
+            <div class="tip">
+                <strong>💡 Caching matters:</strong> The <span class="inline-code">actions/cache</span> step saves ~30-60 seconds per run by reusing pip packages. For large projects, this adds up fast.
+            </div>
+
+            <h2>Linting & Type Checking</h2>
+
+            <p>Run quality checks in parallel with tests — they're fast and catch different issues:</p>
+
+<pre><code>  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        run: pip install ruff mypy
+
+      - name: Ruff lint
+        run: ruff check src/ tests/
+
+      - name: Ruff format check
+        run: ruff format --check src/ tests/
+
+      - name: Type check
+        run: mypy src/ --ignore-missing-imports</code></pre>
+
+            <p>Why Ruff? It replaces flake8 + isort + black in a single tool, and it's 10-100x faster (written in Rust). See our <a href="python-type-hints.html">type hints guide</a> for mypy details.</p>
+
+            <h2>Security Scanning</h2>
+
+<pre><code>  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check dependencies for vulnerabilities
+        run: |
+          pip install pip-audit
+          pip install -r requirements.txt
+          pip-audit
+
+      - name: Check for secrets in code
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified</code></pre>
+
+            <p>See our <a href="python-security-best-practices.html">security best practices guide</a> for more on securing Python projects.</p>
+
+            <h2>Docker Build & Push</h2>
+
+            <p>Build and push Docker images on every release. See our <a href="docker-python-deployment.html">Docker deployment guide</a> for Dockerfile best practices.</p>
+
+<pre><code># .github/workflows/docker.yml
+name: Docker
+
+on:
+  push:
+    tags: ["v*"]  # Trigger on version tags (v1.0.0, v2.1.3)
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH</code></pre>
+
+            <div class="tip">
+                <strong>💡 Build cache:</strong> <span class="inline-code">cache-from/cache-to: type=gha</span> uses GitHub's cache backend. Docker layer caching cuts build times from minutes to seconds for unchanged layers.
+            </div>
+
+            <h2>Publish to PyPI</h2>
+
+            <p>Automatically publish your package when you create a GitHub Release. See our <a href="python-packaging.html">packaging guide</a> for project setup.</p>
+
+<pre><code># .github/workflows/publish.yml
+name: Publish to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi  # Requires environment approval (optional)
+    permissions:
+      id-token: write  # For trusted publishing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build package
+        run: python -m build
+
+      - name: Check package
+        run: twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # Uses trusted publishing — no API token needed!
+        # Configure at https://pypi.org/manage/project/.../settings/publishing/</code></pre>
+
+            <p><strong>Trusted publishing</strong> (OIDC) is the recommended way since 2024 — no API tokens to manage. PyPI verifies the GitHub repo and workflow directly.</p>
+
+            <h2>Database Integration Tests</h2>
+
+            <p>Run tests against real databases using service containers:</p>
+
+<pre><code>  integration:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+        run: pytest tests/integration/ -v -m integration</code></pre>
+
+            <h2>Deploy on Merge</h2>
+
+            <h3>Deploy to a VPS (SSH)</h3>
+
+<pre><code># .github/workflows/deploy.yml
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'  # Skip PRs
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            cd /opt/myapp
+            git pull origin main
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker compose exec -T api alembic upgrade head
+            echo "Deployed $(git rev-parse --short HEAD) at $(date)"</code></pre>
+
+            <h3>Deploy to fly.io</h3>
+
+<pre><code>      - name: Deploy to Fly.io
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}</code></pre>
+
+            <h2>Workflow Optimization Tips</h2>
+
+            <h3>Conditional jobs</h3>
+
+<pre><code>jobs:
+  # Only run expensive tests if code changed (not just docs)
+  test:
+    if: |
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[docs only]')
+
+  # Only deploy from main branch
+  deploy:
+    needs: [test, lint]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'</code></pre>
+
+            <h3>Reusable workflows</h3>
+
+<pre><code># .github/workflows/reusable-test.yml
+name: Reusable Test
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: false
+        type: string
+        default: "3.12"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: pytest tests/ -v
+
+
+# Use it in other workflows:
+# jobs:
+#   test:
+#     uses: ./.github/workflows/reusable-test.yml
+#     with:
+#       python-version: "3.12"</code></pre>
+
+            <h3>Concurrency control</h3>
+
+<pre><code># Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true</code></pre>
+
+            <h2>Complete Production Pipeline</h2>
+
+            <p>Here's the full workflow combining everything:</p>
+
+<pre><code># .github/workflows/pipeline.yml
+name: Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install ruff mypy
+      - run: ruff check src/ tests/
+      - run: ruff format --check src/ tests/
+      - run: mypy src/ --ignore-missing-imports
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: |
+          pip install pip-audit
+          pip install -r requirements.txt
+          pip-audit
+
+  test:
+    needs: lint  # Don't waste CI time if lint fails
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ matrix.python-version }}-${{ hashFiles('requirements*.txt') }}
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: pytest tests/ -v --cov=src --cov-report=xml
+      - uses: codecov/codecov-action@v4
+        if: matrix.python-version == '3.12'
+
+  deploy:
+    needs: [test, security]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max</code></pre>
+
+            <div class="cta">
+                <p>🚀 Want CI/CD templates, automation scripts, and production deployment configs?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="testing-python.html">Python Testing Guide — pytest, Mocking & CI Integration</a></li>
+                <li><a href="docker-python-deployment.html">Dockerize Python Apps — From Development to Production</a></li>
+                <li><a href="python-packaging.html">Python Packaging — Build & Distribute Your Library</a></li>
+                <li><a href="python-security-best-practices.html">Python Security Best Practices</a></li>
+                <li><a href="python-type-hints.html">Python Type Hints — Write Safer Code</a></li>
+                <li><a href="python-microservices.html">Python Microservices — Build, Deploy & Scale</a></li>
+            </ul>
+
+            <p>Need help setting up CI/CD for your Python project? I build automation pipelines, testing frameworks, and deployment infrastructure. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
