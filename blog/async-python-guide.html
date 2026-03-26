@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Async Programming — asyncio, Tasks & Concurrency Guide (2026)</title>
+    <meta name="description" content="Master async Python: asyncio event loop, coroutines, tasks, gather, semaphores, aiohttp, async generators, error handling, and real-world patterns for high-performance applications.">
+    <meta name="keywords" content="python async, asyncio tutorial, python concurrency, async await python, aiohttp, python tasks, event loop, async generator, python parallel, asyncio guide 2026">
+    <meta property="og:title" content="Python Async Programming — asyncio, Tasks & Concurrency Guide (2026)">
+    <meta property="og:description" content="Master async Python: event loop, tasks, gather, semaphores, aiohttp, and production patterns. Real code for high-performance apps.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/async-python-guide.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/async-python-guide.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Async Programming — asyncio, Tasks & Concurrency</h1>
+            <p class="meta">March 2026 · 22 min read · Python, asyncio, Concurrency</p>
+
+            <p>If your Python code spends most of its time waiting — for API responses, database queries, file I/O, or network calls — async programming can make it 5-50x faster without threads or multiprocessing. This guide covers everything from basic coroutines to production-grade async patterns.</p>
+
+            <h2>Sync vs Async — Why It Matters</h2>
+
+            <p>Consider fetching 100 URLs. Synchronously, each request blocks until complete:</p>
+
+<pre><code># Synchronous — ~100 seconds for 100 URLs (1s each)
+import requests
+
+urls = [f"https://httpbin.org/delay/1" for _ in range(100)]
+
+for url in urls:
+    resp = requests.get(url)  # Blocks for ~1 second
+    print(resp.status_code)</code></pre>
+
+            <p>With async, all 100 requests run concurrently:</p>
+
+<pre><code># Async — ~2 seconds for 100 URLs
+import asyncio
+import aiohttp
+
+async def fetch(session, url):
+    async with session.get(url) as resp:
+        return resp.status
+
+async def main():
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch(session, url) for url in urls]
+        results = await asyncio.gather(*tasks)
+        print(results)
+
+asyncio.run(main())</code></pre>
+
+            <p>Same work, ~50x faster. The key insight: while one request waits for a server response, Python can start and manage other requests.</p>
+
+            <h2>Core Concepts</h2>
+
+            <h3>Coroutines</h3>
+
+            <p>A coroutine is a function defined with <span class="inline-code">async def</span>. It doesn't run when called — it returns a coroutine object that must be awaited.</p>
+
+<pre><code>import asyncio
+
+async def greet(name: str) -> str:
+    """A coroutine — pauses at await, resumes when ready."""
+    await asyncio.sleep(1)  # Non-blocking sleep
+    return f"Hello, {name}!"
+
+# Wrong — returns coroutine object, doesn't execute
+result = greet("World")  # &lt;coroutine object greet at 0x...&gt;
+
+# Right — run the coroutine
+result = asyncio.run(greet("World"))  # "Hello, World!"</code></pre>
+
+            <h3>The Event Loop</h3>
+
+            <p>The event loop is the scheduler. It runs coroutines, handles I/O callbacks, and manages tasks. Think of it as a single-threaded task manager that switches between coroutines at every <span class="inline-code">await</span> point.</p>
+
+<pre><code># asyncio.run() creates and manages the event loop
+asyncio.run(main())  # Python 3.7+
+
+# Manual loop (rarely needed)
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
+
+# Get the running loop (inside async code)
+loop = asyncio.get_running_loop()</code></pre>
+
+            <h3>await — The Yield Point</h3>
+
+            <p>Every <span class="inline-code">await</span> is a potential context switch. The event loop can run other coroutines while the current one waits:</p>
+
+<pre><code>async def worker(name: str, delay: float):
+    print(f"{name}: starting")
+    await asyncio.sleep(delay)  # Yields control here
+    print(f"{name}: done after {delay}s")
+
+async def main():
+    # These run concurrently, not sequentially!
+    await asyncio.gather(
+        worker("A", 2),
+        worker("B", 1),
+        worker("C", 3),
+    )
+    # Output order: A start, B start, C start, B done (1s), A done (2s), C done (3s)
+    # Total time: ~3s, not 6s
+
+asyncio.run(main())</code></pre>
+
+            <h2>Tasks — Fire and Manage</h2>
+
+            <h3>Creating tasks</h3>
+
+<pre><code>async def main():
+    # Create a task — starts running immediately
+    task = asyncio.create_task(worker("background", 5))
+
+    # Do other work while task runs
+    print("Doing other stuff...")
+    await asyncio.sleep(1)
+
+    # Wait for the task to complete
+    result = await task
+    print(f"Task result: {result}")</code></pre>
+
+            <h3>Task groups (Python 3.11+)</h3>
+
+<pre><code>async def fetch_url(url: str) -> dict:
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            return {"url": url, "status": resp.status}
+
+
+async def main():
+    urls = [
+        "https://httpbin.org/get",
+        "https://httpbin.org/ip",
+        "https://httpbin.org/headers",
+    ]
+
+    # TaskGroup: structured concurrency — all tasks complete or all cancel
+    async with asyncio.TaskGroup() as tg:
+        tasks = [tg.create_task(fetch_url(url)) for url in urls]
+
+    # All tasks are done here
+    results = [t.result() for t in tasks]
+    for r in results:
+        print(f"{r['url']}: {r['status']}")</code></pre>
+
+            <div class="tip">
+                <strong>💡 Tip:</strong> <span class="inline-code">TaskGroup</span> (Python 3.11+) is preferred over <span class="inline-code">gather</span> for new code. If any task raises an exception, all others are cancelled — preventing orphaned tasks.
+            </div>
+
+            <h3>gather — Run Multiple Coroutines</h3>
+
+<pre><code>async def main():
+    # Run concurrently, collect all results
+    results = await asyncio.gather(
+        fetch_url("https://api.github.com"),
+        fetch_url("https://httpbin.org/get"),
+        fetch_url("https://jsonplaceholder.typicode.com/posts/1"),
+    )
+
+    # return_exceptions=True: don't crash on individual failures
+    results = await asyncio.gather(
+        fetch_url("https://valid.com"),
+        fetch_url("https://will-fail.invalid"),
+        return_exceptions=True,  # Failed tasks return Exception objects
+    )
+    for r in results:
+        if isinstance(r, Exception):
+            print(f"Failed: {r}")
+        else:
+            print(f"OK: {r}")</code></pre>
+
+            <h2>Controlling Concurrency</h2>
+
+            <h3>Semaphores — Rate Limiting</h3>
+
+            <p>Without limits, 10,000 concurrent requests will overwhelm servers and your own machine. Semaphores cap concurrency:</p>
+
+<pre><code>async def fetch_with_limit(sem: asyncio.Semaphore, session, url: str):
+    async with sem:  # Only N coroutines enter at a time
+        async with session.get(url) as resp:
+            return await resp.json()
+
+
+async def main():
+    sem = asyncio.Semaphore(20)  # Max 20 concurrent requests
+    urls = [f"https://jsonplaceholder.typicode.com/posts/{i}" for i in range(1, 101)]
+
+    async with aiohttp.ClientSession() as session:
+        tasks = [fetch_with_limit(sem, session, url) for url in urls]
+        results = await asyncio.gather(*tasks)
+
+    print(f"Fetched {len(results)} posts")
+
+asyncio.run(main())</code></pre>
+
+            <h3>Queue-based worker pattern</h3>
+
+<pre><code>async def worker(name: str, queue: asyncio.Queue, results: list):
+    """Process items from queue until sentinel (None)."""
+    while True:
+        item = await queue.get()
+        if item is None:
+            break
+        try:
+            result = await process_item(item)
+            results.append(result)
+        except Exception as e:
+            print(f"Worker {name}: error processing {item}: {e}")
+        finally:
+            queue.task_done()
+
+
+async def process_item(item: dict) -> dict:
+    """Simulate processing with async I/O."""
+    await asyncio.sleep(0.1)  # Simulated API call
+    return {"id": item["id"], "processed": True}
+
+
+async def main():
+    queue = asyncio.Queue(maxsize=100)
+    results = []
+    num_workers = 10
+
+    # Start workers
+    workers = [
+        asyncio.create_task(worker(f"w-{i}", queue, results))
+        for i in range(num_workers)
+    ]
+
+    # Feed items
+    items = [{"id": i, "data": f"item-{i}"} for i in range(200)]
+    for item in items:
+        await queue.put(item)
+
+    # Send stop signals
+    for _ in range(num_workers):
+        await queue.put(None)
+
+    # Wait for all workers to finish
+    await asyncio.gather(*workers)
+    print(f"Processed {len(results)} items")
+
+asyncio.run(main())</code></pre>
+
+            <h2>Async I/O Patterns</h2>
+
+            <h3>HTTP with aiohttp</h3>
+
+<pre><code>import aiohttp
+import asyncio
+
+async def fetch_json(session: aiohttp.ClientSession, url: str) -> dict:
+    """Fetch JSON with timeout and error handling."""
+    try:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            resp.raise_for_status()
+            return await resp.json()
+    except aiohttp.ClientError as e:
+        return {"error": str(e), "url": url}
+
+
+async def post_data(session: aiohttp.ClientSession, url: str, data: dict) -> dict:
+    async with session.post(url, json=data) as resp:
+        return await resp.json()
+
+
+async def main():
+    # Reuse one session for connection pooling
+    connector = aiohttp.TCPConnector(limit=30)  # Connection pool
+    async with aiohttp.ClientSession(connector=connector) as session:
+        # Parallel fetches
+        urls = [
+            "https://jsonplaceholder.typicode.com/posts/1",
+            "https://jsonplaceholder.typicode.com/users/1",
+            "https://jsonplaceholder.typicode.com/todos/1",
+        ]
+        results = await asyncio.gather(*[fetch_json(session, u) for u in urls])
+        for r in results:
+            print(r.get("title", r.get("name", r.get("error"))))
+
+asyncio.run(main())</code></pre>
+
+            <h3>File I/O with aiofiles</h3>
+
+<pre><code>import aiofiles
+import asyncio
+import json
+
+async def read_json(path: str) -> dict:
+    async with aiofiles.open(path, "r") as f:
+        content = await f.read()
+        return json.loads(content)
+
+
+async def write_results(path: str, data: list):
+    async with aiofiles.open(path, "w") as f:
+        await f.write(json.dumps(data, indent=2))
+
+
+async def process_files(input_dir: str, output_path: str):
+    """Read multiple JSON files concurrently, process, write output."""
+    from pathlib import Path
+
+    files = list(Path(input_dir).glob("*.json"))
+    tasks = [read_json(str(f)) for f in files]
+    records = await asyncio.gather(*tasks)
+
+    # Process
+    processed = [{"file": f.name, "keys": len(r)} for f, r in zip(files, records)]
+    await write_results(output_path, processed)</code></pre>
+
+            <h3>Database with asyncpg / aiosqlite</h3>
+
+<pre><code>import asyncpg
+import asyncio
+
+
+async def main():
+    # Connection pool — essential for production
+    pool = await asyncpg.create_pool(
+        "postgresql://user:pass@localhost/mydb",
+        min_size=5,
+        max_size=20,
+    )
+
+    # Query
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("SELECT id, name FROM users WHERE active = $1", True)
+        for row in rows:
+            print(f"User {row['id']}: {row['name']}")
+
+    # Transaction
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.execute(
+                "INSERT INTO logs (message) VALUES ($1)", "async insert"
+            )
+            await conn.execute(
+                "UPDATE counters SET value = value + 1 WHERE name = $1", "inserts"
+            )
+
+    await pool.close()
+
+asyncio.run(main())</code></pre>
+
+            <h2>Async Generators and Iterators</h2>
+
+<pre><code>async def paginated_fetch(session, base_url: str, per_page: int = 100):
+    """Async generator: yields pages of results."""
+    page = 1
+    while True:
+        url = f"{base_url}?page={page}&per_page={per_page}"
+        async with session.get(url) as resp:
+            data = await resp.json()
+            if not data:
+                break
+            yield data
+            page += 1
+
+
+async def main():
+    async with aiohttp.ClientSession() as session:
+        all_items = []
+        async for page_items in paginated_fetch(session, "https://api.example.com/items"):
+            all_items.extend(page_items)
+            print(f"Fetched {len(all_items)} items so far...")
+
+        print(f"Total: {len(all_items)}")</code></pre>
+
+            <h3>Async context managers</h3>
+
+<pre><code>from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def managed_session():
+    """Custom async context manager for HTTP sessions."""
+    session = aiohttp.ClientSession(
+        timeout=aiohttp.ClientTimeout(total=30),
+        headers={"User-Agent": "MyBot/1.0"},
+    )
+    try:
+        yield session
+    finally:
+        await session.close()
+
+
+async def main():
+    async with managed_session() as session:
+        async with session.get("https://httpbin.org/get") as resp:
+            print(await resp.json())</code></pre>
+
+            <h2>Error Handling</h2>
+
+            <h3>Timeouts</h3>
+
+<pre><code>async def fetch_with_timeout(url: str, timeout_seconds: float = 5.0):
+    """Cancel if too slow."""
+    try:
+        async with asyncio.timeout(timeout_seconds):  # Python 3.11+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    return await resp.json()
+    except TimeoutError:
+        print(f"Timeout fetching {url}")
+        return None
+
+# For Python 3.10 and below:
+async def fetch_with_timeout_legacy(url: str, timeout_seconds: float = 5.0):
+    try:
+        return await asyncio.wait_for(
+            _fetch(url),
+            timeout=timeout_seconds,
+        )
+    except asyncio.TimeoutError:
+        return None</code></pre>
+
+            <h3>Graceful shutdown</h3>
+
+<pre><code>import signal
+
+async def shutdown(loop, signal=None):
+    """Cleanup tasks on shutdown."""
+    if signal:
+        print(f"Received exit signal {signal.name}")
+
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    print(f"Cancelling {len(tasks)} outstanding tasks")
+
+    for task in tasks:
+        task.cancel()
+
+    await asyncio.gather(*tasks, return_exceptions=True)
+    loop.stop()
+
+
+def main():
+    loop = asyncio.new_event_loop()
+
+    # Handle SIGTERM/SIGINT
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(
+            sig,
+            lambda s=sig: asyncio.create_task(shutdown(loop, signal=s)),
+        )
+
+    try:
+        loop.run_until_complete(run_server())
+    finally:
+        loop.close()</code></pre>
+
+            <h3>Retry with exponential backoff</h3>
+
+<pre><code>import random
+
+async def retry_async(
+    coro_func,
+    *args,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    max_delay: float = 30.0,
+    **kwargs,
+):
+    """Retry an async function with exponential backoff + jitter."""
+    for attempt in range(max_retries + 1):
+        try:
+            return await coro_func(*args, **kwargs)
+        except Exception as e:
+            if attempt == max_retries:
+                raise
+            delay = min(base_delay * (2 ** attempt), max_delay)
+            jitter = random.uniform(0, delay * 0.5)
+            print(f"Attempt {attempt + 1} failed: {e}. Retrying in {delay + jitter:.1f}s")
+            await asyncio.sleep(delay + jitter)
+
+
+# Usage
+result = await retry_async(fetch_json, session, "https://flaky-api.com/data")</code></pre>
+
+            <h2>Threading + Async — Mixing Worlds</h2>
+
+            <p>Some libraries are synchronous (database drivers, file operations). Use <span class="inline-code">run_in_executor</span> to run blocking code without freezing the event loop:</p>
+
+<pre><code>import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+executor = ThreadPoolExecutor(max_workers=4)
+
+def blocking_io(path: str) -> str:
+    """Synchronous function — would block the event loop."""
+    with open(path) as f:
+        return f.read()
+
+def cpu_heavy(data: str) -> int:
+    """CPU-bound work — also blocks."""
+    return sum(ord(c) for c in data)
+
+
+async def main():
+    loop = asyncio.get_running_loop()
+
+    # Run blocking I/O in thread pool
+    content = await loop.run_in_executor(executor, blocking_io, "large_file.txt")
+
+    # Run CPU work in thread pool
+    result = await loop.run_in_executor(executor, cpu_heavy, content)
+
+    # Or use ProcessPoolExecutor for true CPU parallelism
+    from concurrent.futures import ProcessPoolExecutor
+    with ProcessPoolExecutor() as pool:
+        result = await loop.run_in_executor(pool, cpu_heavy, content)
+
+asyncio.run(main())</code></pre>
+
+            <div class="tip">
+                <strong>🔑 Rule of thumb:</strong> Use <span class="inline-code">asyncio</span> for I/O-bound work (network, files, DB). Use <span class="inline-code">ProcessPoolExecutor</span> for CPU-bound work (data crunching, image processing). Use <span class="inline-code">ThreadPoolExecutor</span> for blocking I/O libraries that don't have async versions.
+            </div>
+
+            <h2>Real-World Example: Async Scraper</h2>
+
+<pre><code>import asyncio
+import aiohttp
+import aiofiles
+import json
+from dataclasses import dataclass, asdict
+from datetime import datetime, timezone
+
+
+@dataclass
+class ScrapedItem:
+    url: str
+    title: str
+    status: int
+    scraped_at: str
+
+
+async def scrape_page(
+    sem: asyncio.Semaphore,
+    session: aiohttp.ClientSession,
+    url: str,
+) -> ScrapedItem | None:
+    """Scrape a single page with rate limiting."""
+    async with sem:
+        try:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                text = await resp.text()
+                # Extract title (simplified)
+                title_start = text.find("&lt;title&gt;")
+                title_end = text.find("&lt;/title&gt;")
+                title = text[title_start + 7:title_end] if title_start > 0 else "No title"
+
+                return ScrapedItem(
+                    url=url,
+                    title=title.strip(),
+                    status=resp.status,
+                    scraped_at=datetime.now(timezone.utc).isoformat(),
+                )
+        except Exception as e:
+            print(f"Error scraping {url}: {e}")
+            return None
+
+
+async def main():
+    urls = [
+        "https://httpbin.org/html",
+        "https://example.com",
+        "https://jsonplaceholder.typicode.com",
+    ]
+
+    sem = asyncio.Semaphore(10)  # Max 10 concurrent
+    connector = aiohttp.TCPConnector(limit=20)
+
+    async with aiohttp.ClientSession(connector=connector) as session:
+        tasks = [scrape_page(sem, session, url) for url in urls]
+        results = await asyncio.gather(*tasks)
+
+    # Filter out failures
+    items = [asdict(r) for r in results if r is not None]
+
+    # Save results
+    async with aiofiles.open("scraped.json", "w") as f:
+        await f.write(json.dumps(items, indent=2))
+
+    print(f"Scraped {len(items)}/{len(urls)} pages")
+
+asyncio.run(main())</code></pre>
+
+            <h2>When NOT to Use Async</h2>
+
+            <ul>
+                <li><strong>CPU-bound work</strong> — asyncio won't help with number crunching. Use <span class="inline-code">multiprocessing</span> or <span class="inline-code">ProcessPoolExecutor</span></li>
+                <li><strong>Simple scripts</strong> — if you make 3 API calls sequentially, sync is fine and simpler</li>
+                <li><strong>Libraries without async support</strong> — wrapping everything in <span class="inline-code">run_in_executor</span> adds complexity with little benefit</li>
+                <li><strong>Debugging</strong> — async stack traces are harder to read; start sync, go async when needed</li>
+            </ul>
+
+            <h2>Concurrency Comparison</h2>
+
+            <table>
+                <tr><th>Approach</th><th>Best For</th><th>Overhead</th><th>Scaling</th></tr>
+                <tr><td><span class="inline-code">asyncio</span></td><td>I/O-bound (network, files)</td><td>Very low</td><td>Thousands of connections</td></tr>
+                <tr><td><span class="inline-code">threading</span></td><td>I/O-bound + legacy libs</td><td>Medium (GIL)</td><td>Dozens of threads</td></tr>
+                <tr><td><span class="inline-code">multiprocessing</span></td><td>CPU-bound</td><td>High (process spawn)</td><td>Number of CPU cores</td></tr>
+                <tr><td><span class="inline-code">concurrent.futures</span></td><td>Mixed workloads</td><td>Medium</td><td>Configurable pool</td></tr>
+            </table>
+
+            <h2>Best Practices</h2>
+
+            <ul>
+                <li><strong>Always use semaphores</strong> for external API calls — unbounded concurrency will get you rate-limited or banned</li>
+                <li><strong>Reuse sessions</strong> — create one <span class="inline-code">aiohttp.ClientSession</span> and share it across coroutines</li>
+                <li><strong>Prefer TaskGroup over gather</strong> (Python 3.11+) — better error handling and cancellation</li>
+                <li><strong>Handle timeouts explicitly</strong> — <span class="inline-code">asyncio.timeout()</span> prevents hung coroutines</li>
+                <li><strong>Don't block the event loop</strong> — use <span class="inline-code">run_in_executor</span> for any sync I/O or CPU work</li>
+                <li><strong>Use structured concurrency</strong> — every task should have an owner that awaits it</li>
+                <li><strong>Test with pytest-asyncio</strong> — <span class="inline-code">@pytest.mark.asyncio</span> for async test functions</li>
+                <li><strong>Profile with <span class="inline-code">asyncio.get_event_loop().slow_callback_duration</span></strong> — find blocking calls that stall the loop</li>
+            </ul>
+
+            <div class="cta">
+                <p>🚀 Want production-ready async Python scripts, scrapers, and automation tools?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI</a> — FastAPI is built on async Python</li>
+                <li><a href="api-integration-python.html">Automate API Integrations with Python</a> — sync and async patterns for API work</li>
+                <li><a href="websockets-python.html">WebSockets in Python — Real-Time Apps</a> — async WebSocket connections</li>
+                <li><a href="web-scraping-python-guide.html">Web Scraping with Python</a> — scraping at scale with async</li>
+                <li><a href="data-pipeline-python.html">Build a Data Pipeline in Python</a> — ETL with async data sources</li>
+                <li><a href="testing-python.html">Python Testing Guide</a> — testing async code with pytest-asyncio</li>
+            </ul>
+
+            <p>Need a high-performance async system built for your project? I build Python APIs, scrapers, and data pipelines. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
