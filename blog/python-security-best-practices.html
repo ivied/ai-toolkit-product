@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Security Best Practices — Protect Your Applications (2026)</title>
+    <meta name="description" content="Essential security practices for Python developers. Input validation, SQL injection prevention, secrets management, dependency scanning, authentication, encryption, and secure deployment patterns.">
+    <meta name="keywords" content="python security, sql injection python, input validation, secrets management, python encryption, secure coding python, dependency vulnerabilities, owasp python, python authentication security">
+    <meta property="og:title" content="Python Security Best Practices — Protect Your Applications (2026)">
+    <meta property="og:description" content="Stop shipping vulnerable Python code. Input validation, injection prevention, secrets, encryption, and secure deployment — with real examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-security-best-practices.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-security-best-practices.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .warn { background: rgba(234,102,102,0.1); border-left: 3px solid #ea6666; padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .warn strong { color: #ea6666; }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Security Best Practices — Protect Your Applications</h1>
+            <p class="meta">March 2026 · 20 min read · Python, Security, DevOps</p>
+
+            <p>Most Python tutorials skip security entirely. Then you ship code with hardcoded secrets, SQL injection holes, and dependencies with known CVEs. This guide covers the security practices that every Python developer should know — from input validation to encryption to secure deployment.</p>
+
+            <p>No paranoia, no FUD — just practical patterns that prevent real attacks.</p>
+
+            <h2>1. Input Validation — Trust Nothing</h2>
+
+            <p>Every external input is a potential attack vector. Validate early, validate strictly.</p>
+
+            <h3>Pydantic for structured validation</h3>
+
+<pre><code>from pydantic import BaseModel, Field, EmailStr, field_validator
+import re
+
+
+class UserRegistration(BaseModel):
+    """Validates user input — rejects anything suspicious."""
+
+    username: str = Field(..., min_length=3, max_length=30)
+    email: EmailStr
+    password: str = Field(..., min_length=12)
+    age: int = Field(..., ge=13, le=150)
+
+    @field_validator("username")
+    @classmethod
+    def username_safe(cls, v):
+        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
+            raise ValueError("Username: only letters, numbers, _, -")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v):
+        checks = [
+            (r"[A-Z]", "one uppercase letter"),
+            (r"[a-z]", "one lowercase letter"),
+            (r"[0-9]", "one digit"),
+            (r"[!@#$%^&*(),.?\":{}|<>]", "one special character"),
+        ]
+        missing = [msg for pattern, msg in checks if not re.search(pattern, v)]
+        if missing:
+            raise ValueError(f"Password needs: {', '.join(missing)}")
+        return v
+
+
+# Usage — invalid data raises ValidationError with details
+try:
+    user = UserRegistration(
+        username="alice<script>",  # rejected
+        email="not-an-email",     # rejected
+        password="short",          # rejected
+        age=5,                     # rejected
+    )
+except Exception as e:
+    print(e)  # 4 validation errors with clear messages</code></pre>
+
+            <h3>Sanitize file paths</h3>
+
+<pre><code>from pathlib import Path
+
+
+def safe_file_path(user_input: str, base_dir: str = "/app/uploads") -> Path:
+    """Prevent directory traversal attacks."""
+    base = Path(base_dir).resolve()
+    target = (base / user_input).resolve()
+
+    # Ensure the resolved path is still under base_dir
+    if not str(target).startswith(str(base)):
+        raise ValueError(f"Path traversal attempt: {user_input}")
+
+    return target
+
+
+# ✅ Safe
+safe_file_path("report.pdf")      # /app/uploads/report.pdf
+safe_file_path("2026/jan/data.csv") # /app/uploads/2026/jan/data.csv
+
+# ❌ Blocked
+safe_file_path("../../etc/passwd")  # ValueError: Path traversal attempt
+safe_file_path("/etc/shadow")       # ValueError: Path traversal attempt</code></pre>
+
+            <h2>2. SQL Injection Prevention</h2>
+
+            <div class="warn">
+                <strong>🚨 Never do this:</strong>
+<pre><code># VULNERABLE — user input directly in query
+query = f"SELECT * FROM users WHERE name = '{user_input}'"
+cursor.execute(query)
+# Input: ' OR 1=1 -- → returns ALL users</code></pre>
+            </div>
+
+            <h3>Always use parameterized queries</h3>
+
+<pre><code>import sqlite3
+
+def get_user(db: sqlite3.Connection, username: str):
+    """Safe — parameterized query, no injection possible."""
+    cursor = db.execute(
+        "SELECT * FROM users WHERE username = ?",
+        (username,)
+    )
+    return cursor.fetchone()
+
+
+# PostgreSQL (psycopg2)
+def search_products(conn, name: str, min_price: float):
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT * FROM products WHERE name ILIKE %s AND price >= %s",
+            (f"%{name}%", min_price)
+        )
+        return cur.fetchall()
+
+
+# SQLAlchemy ORM — safe by default
+from sqlalchemy.orm import Session
+
+def find_users(db: Session, email: str):
+    # ORM queries are parameterized automatically
+    return db.query(User).filter(User.email == email).all()
+
+
+# SQLAlchemy Core — explicit parameters
+from sqlalchemy import text
+
+def raw_query(db: Session, status: str):
+    result = db.execute(
+        text("SELECT * FROM orders WHERE status = :status"),
+        {"status": status}
+    )
+    return result.fetchall()</code></pre>
+
+            <p>For more on safe database operations, see our <a href="database-operations-python.html">database guide</a>.</p>
+
+            <h2>3. Secrets Management</h2>
+
+            <div class="warn">
+                <strong>🚨 Never hardcode secrets:</strong>
+<pre><code># WRONG — secrets in source code
+API_KEY = "sk-abc123..."
+DB_PASSWORD = "admin123"</code></pre>
+            </div>
+
+            <h3>Environment variables (minimum)</h3>
+
+<pre><code>import os
+
+# Read from environment
+API_KEY = os.environ["API_KEY"]          # Fails loudly if missing
+DB_URL = os.getenv("DATABASE_URL", "")   # Empty string if missing
+
+# Validate at startup
+required_vars = ["API_KEY", "DATABASE_URL", "SECRET_KEY"]
+missing = [v for v in required_vars if not os.getenv(v)]
+if missing:
+    raise RuntimeError(f"Missing required env vars: {', '.join(missing)}")</code></pre>
+
+            <h3>.env files (development only)</h3>
+
+<pre><code># .env (NEVER commit this file)
+API_KEY=sk-abc123...
+DATABASE_URL=postgresql://user:pass@localhost/mydb
+SECRET_KEY=your-256-bit-secret
+
+# .gitignore
+.env
+*.env
+secrets/</code></pre>
+
+<pre><code># Load with python-dotenv
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # loads .env into os.environ
+api_key = os.environ["API_KEY"]</code></pre>
+
+            <h3>Production: use a secrets manager</h3>
+
+<pre><code># AWS Secrets Manager
+import boto3
+import json
+
+def get_secret(name: str, region: str = "us-east-1") -> dict:
+    client = boto3.client("secretsmanager", region_name=region)
+    response = client.get_secret_value(SecretId=name)
+    return json.loads(response["SecretString"])
+
+# Usage
+db_creds = get_secret("prod/database")
+db_url = f"postgresql://{db_creds['username']}:{db_creds['password']}@{db_creds['host']}/mydb"</code></pre>
+
+            <div class="tip">
+                <strong>💡 Git safety net:</strong> Install <span class="inline-code">git-secrets</span> or <span class="inline-code">detect-secrets</span> as a pre-commit hook to catch accidental secret commits:
+<pre><code>pip install detect-secrets
+detect-secrets scan > .secrets.baseline
+# Add to pre-commit hooks</code></pre>
+            </div>
+
+            <h2>4. Dependency Security</h2>
+
+            <p>Your dependencies are your attack surface. A single vulnerable package can compromise everything.</p>
+
+<pre><code># Pin exact versions (not ranges)
+# requirements.txt
+fastapi==0.115.0
+sqlalchemy==2.0.35
+pydantic==2.10.0
+
+# Audit for known vulnerabilities
+pip install pip-audit
+pip-audit
+
+# Output:
+# Found 2 known vulnerabilities in 1 package
+# Name    Version  ID                  Fix Versions
+# ------  -------  ------------------  ------------
+# urllib3 1.26.5   PYSEC-2023-192      1.26.17
+# urllib3 1.26.5   PYSEC-2023-212      1.26.18</code></pre>
+
+            <h3>Automated scanning in CI</h3>
+
+<pre><code># .github/workflows/security.yml
+name: Security Scan
+on: [push, pull_request]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          pip install pip-audit
+          pip install -r requirements.txt
+          pip-audit --strict
+
+  sast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          pip install bandit
+          bandit -r app/ -f json -o bandit-report.json || true
+          bandit -r app/ -ll  # fail on medium+ severity</code></pre>
+
+            <h3>Bandit — static security analysis</h3>
+
+<pre><code># Install and run
+pip install bandit
+bandit -r your_project/ -ll
+
+# Common findings:
+# B101: assert used (not for security checks — asserts are stripped in -O mode)
+# B105: hardcoded password
+# B301: pickle usage (arbitrary code execution risk)
+# B608: SQL injection (string formatting in queries)
+# B602: subprocess with shell=True</code></pre>
+
+            <h2>5. Authentication & Password Handling</h2>
+
+<pre><code>from passlib.context import CryptContext
+import secrets
+
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12,  # increase for stronger hashing (slower)
+)
+
+
+def hash_password(password: str) -> str:
+    """Hash password with bcrypt — safe for storage."""
+    return pwd_context.hash(password)
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    """Verify password — constant-time comparison (no timing attacks)."""
+    return pwd_context.verify(plain, hashed)
+
+
+def generate_token(nbytes: int = 32) -> str:
+    """Cryptographically secure random token."""
+    return secrets.token_urlsafe(nbytes)
+
+
+def generate_api_key() -> str:
+    """Generate a prefixed API key."""
+    return f"sk_{secrets.token_hex(24)}"
+
+
+# ✅ Safe comparisons (constant-time)
+def safe_compare(a: str, b: str) -> bool:
+    """Prevent timing attacks on token comparison."""
+    return secrets.compare_digest(a.encode(), b.encode())
+
+
+# Usage
+hashed = hash_password("my_secure_password_123!")
+assert verify_password("my_secure_password_123!", hashed)
+assert not verify_password("wrong_password", hashed)</code></pre>
+
+            <p>For JWT authentication implementation, see our <a href="fastapi-rest-api.html">FastAPI guide</a>.</p>
+
+            <h2>6. Encryption</h2>
+
+            <h3>Symmetric encryption (Fernet)</h3>
+
+<pre><code>from cryptography.fernet import Fernet
+import base64
+import hashlib
+
+
+# Generate a key (store securely!)
+key = Fernet.generate_key()
+cipher = Fernet(key)
+
+# Encrypt
+plaintext = b"sensitive data: SSN 123-45-6789"
+encrypted = cipher.encrypt(plaintext)
+print(encrypted)  # b'gAAAAA...' (base64 encoded)
+
+# Decrypt
+decrypted = cipher.decrypt(encrypted)
+assert decrypted == plaintext
+
+
+# Derive key from password (when you can't store a random key)
+def derive_key(password: str, salt: bytes) -> bytes:
+    """PBKDF2 key derivation — slow by design (anti-bruteforce)."""
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    from cryptography.hazmat.primitives import hashes
+
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=600_000,  # OWASP 2023 recommendation
+    )
+    return base64.urlsafe_b64encode(kdf.derive(password.encode()))</code></pre>
+
+            <h3>Hashing (for integrity, not encryption)</h3>
+
+<pre><code>import hashlib
+
+
+def hash_file(filepath: str) -> str:
+    """SHA-256 hash of a file (streaming, memory-safe)."""
+    sha256 = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            sha256.update(chunk)
+    return sha256.hexdigest()
+
+
+def hash_data(data: str) -> str:
+    """SHA-256 hash of a string."""
+    return hashlib.sha256(data.encode()).hexdigest()
+
+
+# Verify file integrity
+expected = "a1b2c3d4..."
+actual = hash_file("downloaded_package.tar.gz")
+if actual != expected:
+    raise SecurityError("File integrity check failed!")</code></pre>
+
+            <h2>7. Subprocess Safety</h2>
+
+<pre><code>import subprocess
+import shlex
+
+
+# ❌ DANGEROUS — shell injection
+user_input = "file.txt; rm -rf /"
+subprocess.run(f"cat {user_input}", shell=True)  # executes rm -rf /!
+
+
+# ✅ SAFE — no shell, arguments as list
+def safe_run(filename: str) -> str:
+    """Run command safely — no shell injection possible."""
+    result = subprocess.run(
+        ["cat", filename],       # list form, no shell
+        capture_output=True,
+        text=True,
+        timeout=30,              # prevent hanging
+        check=True,              # raise on non-zero exit
+    )
+    return result.stdout
+
+
+# ✅ If you MUST use shell, validate input
+def run_with_validation(command: str, allowed_commands: set[str]):
+    """Allowlist approach — only known-safe commands."""
+    cmd_name = shlex.split(command)[0]
+    if cmd_name not in allowed_commands:
+        raise ValueError(f"Command not allowed: {cmd_name}")
+
+    return subprocess.run(
+        shlex.split(command),  # proper tokenization
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )</code></pre>
+
+            <h2>8. Secure HTTP Requests</h2>
+
+<pre><code>import httpx
+
+
+def secure_request(url: str, api_key: str) -> dict:
+    """Make HTTP requests with security best practices."""
+    with httpx.Client(
+        timeout=10.0,            # never wait forever
+        follow_redirects=False,  # prevent redirect attacks
+        verify=True,             # always verify TLS (default)
+    ) as client:
+        response = client.get(
+            url,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "User-Agent": "MyApp/1.0",  # identify yourself
+            },
+        )
+        response.raise_for_status()
+        return response.json()
+
+
+# SSRF prevention — block internal IPs
+import ipaddress
+
+def is_safe_url(url: str) -> bool:
+    """Prevent Server-Side Request Forgery (SSRF)."""
+    from urllib.parse import urlparse
+    import socket
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        return False
+
+    try:
+        ip = socket.gethostbyname(parsed.hostname)
+        addr = ipaddress.ip_address(ip)
+        # Block private, loopback, link-local ranges
+        if addr.is_private or addr.is_loopback or addr.is_link_local:
+            return False
+    except (socket.gaierror, ValueError):
+        return False
+
+    return True</code></pre>
+
+            <h2>9. Logging Without Leaking</h2>
+
+<pre><code>import logging
+import re
+
+logger = logging.getLogger(__name__)
+
+
+class SensitiveFilter(logging.Filter):
+    """Redact sensitive data from log messages."""
+
+    PATTERNS = [
+        (re.compile(r"password['\"]?\s*[:=]\s*['\"]?[\w!@#$%^&*]+", re.I), "password=***REDACTED***"),
+        (re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z]{2,}\b", re.I), "***EMAIL***"),
+        (re.compile(r"\b\d{3}-\d{2}-\d{4}\b"), "***SSN***"),
+        (re.compile(r"sk-[a-zA-Z0-9]{20,}"), "sk-***REDACTED***"),
+        (re.compile(r"Bearer\s+[a-zA-Z0-9._-]+"), "Bearer ***REDACTED***"),
+    ]
+
+    def filter(self, record):
+        msg = record.getMessage()
+        for pattern, replacement in self.PATTERNS:
+            msg = pattern.sub(replacement, msg)
+        record.msg = msg
+        record.args = ()
+        return True
+
+
+# Setup
+handler = logging.StreamHandler()
+handler.addFilter(SensitiveFilter())
+logger.addHandler(handler)
+
+# These get redacted automatically
+logger.info("User login: password='secret123'")    # password=***REDACTED***
+logger.info("API call with Bearer sk-abc123def456") # Bearer ***REDACTED***</code></pre>
+
+            <p>For comprehensive logging patterns, see our <a href="python-logging-monitoring.html">logging guide</a>.</p>
+
+            <h2>10. Security Headers (Web APIs)</h2>
+
+<pre><code># FastAPI security middleware
+from fastapi import FastAPI, Request
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+
+app = FastAPI()
+
+# Only accept requests to your domain
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["api.example.com", "localhost"])
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+
+    # Prevent clickjacking
+    response.headers["X-Frame-Options"] = "DENY"
+
+    # Prevent MIME sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+    # XSS protection
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+
+    # Content Security Policy
+    response.headers["Content-Security-Policy"] = "default-src 'self'"
+
+    # Strict Transport Security (HTTPS only)
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+
+    # Don't leak referrer info
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    return response</code></pre>
+
+            <h2>Security Checklist</h2>
+
+            <table>
+                <tr><th>Category</th><th>Action</th><th>Priority</th></tr>
+                <tr><td>Secrets</td><td>No hardcoded credentials, use env vars or secrets manager</td><td>🔴 Critical</td></tr>
+                <tr><td>Dependencies</td><td>Run <span class="inline-code">pip-audit</span> in CI, pin versions</td><td>🔴 Critical</td></tr>
+                <tr><td>SQL</td><td>Parameterized queries everywhere, never string format</td><td>🔴 Critical</td></tr>
+                <tr><td>Input</td><td>Validate all user input with Pydantic or equivalent</td><td>🟠 High</td></tr>
+                <tr><td>Auth</td><td>bcrypt passwords, secure token generation, constant-time compare</td><td>🟠 High</td></tr>
+                <tr><td>Subprocess</td><td>No <span class="inline-code">shell=True</span>, use list arguments</td><td>🟠 High</td></tr>
+                <tr><td>Logging</td><td>Redact PII and secrets from logs</td><td>🟡 Medium</td></tr>
+                <tr><td>HTTPS</td><td>TLS everywhere, verify certificates</td><td>🟠 High</td></tr>
+                <tr><td>Headers</td><td>Security headers on all HTTP responses</td><td>🟡 Medium</td></tr>
+                <tr><td>Scanning</td><td>Bandit SAST in CI pipeline</td><td>🟡 Medium</td></tr>
+            </table>
+
+            <div class="cta">
+                <p>🔒 Want secure, production-ready Python scripts and API templates?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI</a> — JWT auth, CORS, and secure API patterns</li>
+                <li><a href="database-operations-python.html">Python Database Operations</a> — parameterized queries with SQLAlchemy</li>
+                <li><a href="python-logging-monitoring.html">Python Logging & Monitoring</a> — secure logging without data leaks</li>
+                <li><a href="docker-python-deployment.html">Dockerize Python Apps</a> — secure container deployment</li>
+                <li><a href="testing-python.html">Python Testing Guide</a> — test your security controls</li>
+            </ul>
+
+            <p>Need a security review or secure Python architecture for your project? <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
