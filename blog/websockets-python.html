@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSockets in Python — Build Real-Time Apps with FastAPI & websockets (2026)</title>
+    <meta name="description" content="Complete guide to WebSockets in Python. Build real-time chat, live dashboards, and notification systems with FastAPI WebSockets, the websockets library, and Socket.IO.">
+    <meta name="keywords" content="python websockets, fastapi websocket, real-time python, websocket tutorial, python chat app, socket.io python, live dashboard python, async websocket python">
+    <meta property="og:title" content="WebSockets in Python — Build Real-Time Apps (2026)">
+    <meta property="og:description" content="Build real-time chat, live dashboards, and notifications with Python WebSockets. FastAPI, websockets lib, and Socket.IO examples.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/websockets-python.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/websockets-python.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>WebSockets in Python — Build Real-Time Apps</h1>
+            <p class="meta">March 2026 · 18 min read · Python, WebSockets, FastAPI, Real-Time</p>
+
+            <p>HTTP is request-response: the client asks, the server answers, the connection closes. But what about live chat, stock tickers, multiplayer games, or IoT dashboards? That's where WebSockets come in — persistent, bidirectional connections between client and server. In this guide, you'll build real-time Python apps from scratch.</p>
+
+            <h2>WebSockets vs HTTP — When to Use What</h2>
+
+            <table>
+                <tr><th>Feature</th><th>HTTP</th><th>WebSocket</th></tr>
+                <tr><td>Connection</td><td>Short-lived (per request)</td><td>Persistent (stays open)</td></tr>
+                <tr><td>Direction</td><td>Client → Server (request/response)</td><td>Bidirectional (both push)</td></tr>
+                <tr><td>Overhead</td><td>Headers on every request</td><td>Minimal after handshake</td></tr>
+                <tr><td>Use case</td><td>CRUD APIs, page loads</td><td>Chat, live feeds, gaming</td></tr>
+                <tr><td>Protocol</td><td>http:// / https://</td><td>ws:// / wss://</td></tr>
+            </table>
+
+            <p><strong>Use WebSockets when:</strong> you need sub-second updates pushed from the server, or the client sends frequent small messages. For everything else, a regular <a href="fastapi-rest-api.html">REST API</a> is simpler and more scalable.</p>
+
+            <h2>Option 1: The websockets Library</h2>
+
+            <p>The <span class="inline-code">websockets</span> library is pure Python, async-native, and perfect for standalone WebSocket servers.</p>
+
+<pre><code>pip install websockets</code></pre>
+
+            <h3>Basic echo server</h3>
+
+<pre><code># server.py
+import asyncio
+import websockets
+
+
+async def echo(websocket):
+    """Echo back every message received."""
+    async for message in websocket:
+        print(f"Received: {message}")
+        await websocket.send(f"Echo: {message}")
+
+
+async def main():
+    async with websockets.serve(echo, "localhost", 8765):
+        print("WebSocket server running on ws://localhost:8765")
+        await asyncio.Future()  # Run forever
+
+
+asyncio.run(main())</code></pre>
+
+            <h3>Python client</h3>
+
+<pre><code># client.py
+import asyncio
+import websockets
+
+
+async def main():
+    async with websockets.connect("ws://localhost:8765") as ws:
+        await ws.send("Hello, WebSocket!")
+        response = await ws.recv()
+        print(f"Server said: {response}")
+
+
+asyncio.run(main())</code></pre>
+
+            <h3>Chat room (broadcast to all clients)</h3>
+
+<pre><code># chat_server.py
+import asyncio
+import websockets
+import json
+from datetime import datetime, timezone
+
+connected_clients: set[websockets.WebSocketServerProtocol] = set()
+
+
+async def broadcast(message: str, sender=None):
+    """Send message to all connected clients except the sender."""
+    disconnected = set()
+    for client in connected_clients:
+        if client != sender:
+            try:
+                await client.send(message)
+            except websockets.ConnectionClosed:
+                disconnected.add(client)
+    connected_clients -= disconnected
+
+
+async def handler(websocket):
+    # Register client
+    connected_clients.add(websocket)
+    client_id = id(websocket) % 10000
+    print(f"Client {client_id} connected ({len(connected_clients)} total)")
+
+    try:
+        # Announce join
+        await broadcast(json.dumps({
+            "type": "system",
+            "message": f"User {client_id} joined",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }))
+
+        # Handle messages
+        async for raw in websocket:
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                data = {"text": raw}
+
+            message = json.dumps({
+                "type": "message",
+                "user": client_id,
+                "text": data.get("text", ""),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+            await broadcast(message)
+
+    except websockets.ConnectionClosed:
+        pass
+    finally:
+        connected_clients.discard(websocket)
+        await broadcast(json.dumps({
+            "type": "system",
+            "message": f"User {client_id} left",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }))
+        print(f"Client {client_id} disconnected ({len(connected_clients)} total)")
+
+
+async def main():
+    async with websockets.serve(handler, "0.0.0.0", 8765):
+        print("Chat server running on ws://0.0.0.0:8765")
+        await asyncio.Future()
+
+
+asyncio.run(main())</code></pre>
+
+            <div class="tip">
+                <strong>💡 Tip:</strong> Always handle <span class="inline-code">ConnectionClosed</span> exceptions. Clients disconnect unexpectedly — your server shouldn't crash when they do.
+            </div>
+
+            <h2>Option 2: FastAPI WebSockets</h2>
+
+            <p>If you already have a <a href="fastapi-rest-api.html">FastAPI REST API</a>, adding WebSocket endpoints is trivial. You get both HTTP and WS on the same server.</p>
+
+<pre><code>pip install "fastapi[standard]"</code></pre>
+
+            <h3>Basic WebSocket endpoint</h3>
+
+<pre><code># app.py
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+app = FastAPI()
+
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_text(f"You said: {data}")
+    except WebSocketDisconnect:
+        print("Client disconnected")</code></pre>
+
+            <h3>Connection manager (multi-room chat)</h3>
+
+<pre><code># manager.py
+from fastapi import WebSocket
+import json
+
+
+class ConnectionManager:
+    """Manages WebSocket connections across multiple rooms."""
+
+    def __init__(self):
+        self.rooms: dict[str, list[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, room: str):
+        await websocket.accept()
+        if room not in self.rooms:
+            self.rooms[room] = []
+        self.rooms[room].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, room: str):
+        if room in self.rooms:
+            self.rooms[room].remove(websocket)
+            if not self.rooms[room]:
+                del self.rooms[room]
+
+    async def broadcast(self, room: str, message: dict, exclude: WebSocket = None):
+        if room not in self.rooms:
+            return
+        dead = []
+        for ws in self.rooms[room]:
+            if ws != exclude:
+                try:
+                    await ws.send_json(message)
+                except Exception:
+                    dead.append(ws)
+        for ws in dead:
+            self.disconnect(ws, room)
+
+    def get_room_count(self, room: str) -> int:
+        return len(self.rooms.get(room, []))
+
+
+manager = ConnectionManager()</code></pre>
+
+<pre><code># app.py (continued)
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
+from manager import manager
+
+app = FastAPI()
+
+
+@app.websocket("/ws/chat/{room}")
+async def chat(websocket: WebSocket, room: str, username: str = Query("anonymous")):
+    await manager.connect(websocket, room)
+
+    # Announce join
+    await manager.broadcast(room, {
+        "type": "system",
+        "message": f"{username} joined (room: {room}, online: {manager.get_room_count(room)})"
+    })
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            await manager.broadcast(room, {
+                "type": "message",
+                "user": username,
+                "text": data.get("text", ""),
+            })
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, room)
+        await manager.broadcast(room, {
+            "type": "system",
+            "message": f"{username} left"
+        })</code></pre>
+
+            <h3>Authentication for WebSockets</h3>
+
+<pre><code>from fastapi import WebSocket, WebSocketDisconnect, status
+from jose import JWTError, jwt
+
+SECRET_KEY = "your-secret-key"
+ALGORITHM = "HS256"
+
+
+async def get_ws_user(websocket: WebSocket) -> str | None:
+    """Extract user from token query param or first message."""
+    # Method 1: Token in query string — ws://host/ws?token=xxx
+    token = websocket.query_params.get("token")
+
+    if not token:
+        # Method 2: Token in subprotocol header
+        token = websocket.headers.get("sec-websocket-protocol")
+
+    if not token:
+        return None
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("sub")
+    except JWTError:
+        return None
+
+
+@app.websocket("/ws/secure")
+async def secure_ws(websocket: WebSocket):
+    user = await get_ws_user(websocket)
+    if not user:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    await websocket.accept()
+    await websocket.send_json({"type": "auth", "user": user})
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            await websocket.send_json({"echo": data, "from": user})
+    except WebSocketDisconnect:
+        pass</code></pre>
+
+            <div class="tip">
+                <strong>🔒 Security:</strong> WebSockets don't support custom HTTP headers after the handshake. Pass auth tokens via query params (<span class="inline-code">?token=xxx</span>) or in the first message. Always use <span class="inline-code">wss://</span> in production.
+            </div>
+
+            <h2>Live Dashboard (Server Push)</h2>
+
+            <p>A common pattern: the server pushes real-time metrics to connected clients. No client messages needed — pure server-to-client streaming.</p>
+
+<pre><code># dashboard.py
+import asyncio
+import json
+import random
+from datetime import datetime, timezone
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+app = FastAPI()
+dashboard_clients: list[WebSocket] = []
+
+
+async def generate_metrics():
+    """Simulate server metrics every second."""
+    while True:
+        metric = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "cpu": round(random.uniform(10, 95), 1),
+            "memory": round(random.uniform(40, 85), 1),
+            "requests_per_sec": random.randint(50, 500),
+            "error_rate": round(random.uniform(0, 5), 2),
+        }
+
+        dead = []
+        for ws in dashboard_clients:
+            try:
+                await ws.send_json(metric)
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            dashboard_clients.remove(ws)
+
+        await asyncio.sleep(1)
+
+
+@app.on_event("startup")
+async def start_metrics():
+    asyncio.create_task(generate_metrics())
+
+
+@app.websocket("/ws/dashboard")
+async def dashboard(websocket: WebSocket):
+    await websocket.accept()
+    dashboard_clients.append(websocket)
+    try:
+        # Keep connection alive — listen for pings/close
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        dashboard_clients.remove(websocket)</code></pre>
+
+            <h3>HTML client for the dashboard</h3>
+
+<pre><code>&lt;!-- dashboard.html --&gt;
+&lt;div id="metrics"&gt;&lt;/div&gt;
+
+&lt;script&gt;
+const ws = new WebSocket("ws://localhost:8000/ws/dashboard");
+const el = document.getElementById("metrics");
+
+ws.onmessage = (event) =&gt; {
+    const m = JSON.parse(event.data);
+    el.innerHTML = `
+        &lt;p&gt;CPU: ${m.cpu}% | Memory: ${m.memory}%&lt;/p&gt;
+        &lt;p&gt;Requests/s: ${m.requests_per_sec} | Errors: ${m.error_rate}%&lt;/p&gt;
+        &lt;p&gt;Updated: ${m.timestamp}&lt;/p&gt;
+    `;
+};
+
+ws.onclose = () =&gt; {
+    el.innerHTML = "&lt;p&gt;Disconnected. Refresh to reconnect.&lt;/p&gt;";
+};
+&lt;/script&gt;</code></pre>
+
+            <h2>Reconnection and Heartbeats</h2>
+
+            <p>Connections drop. Networks fail. A robust WebSocket client needs automatic reconnection and keep-alive pings.</p>
+
+<pre><code># robust_client.py
+import asyncio
+import websockets
+import json
+
+
+async def connect_with_retry(url: str, max_retries: int = 10):
+    """Connect to WebSocket with exponential backoff."""
+    retry = 0
+    while retry < max_retries:
+        try:
+            async with websockets.connect(url, ping_interval=20, ping_timeout=10) as ws:
+                print(f"Connected to {url}")
+                retry = 0  # Reset on successful connection
+
+                async for message in ws:
+                    data = json.loads(message)
+                    print(f"Received: {data}")
+
+        except (websockets.ConnectionClosed, ConnectionRefusedError, OSError) as e:
+            retry += 1
+            wait = min(2 ** retry, 60)  # Exponential backoff, max 60s
+            print(f"Disconnected ({e}). Retry {retry}/{max_retries} in {wait}s...")
+            await asyncio.sleep(wait)
+
+    print("Max retries reached. Giving up.")
+
+
+asyncio.run(connect_with_retry("ws://localhost:8765"))</code></pre>
+
+            <h3>Server-side ping/pong</h3>
+
+<pre><code># The websockets library handles ping/pong automatically.
+# Configure intervals when creating the server:
+
+async with websockets.serve(
+    handler,
+    "0.0.0.0",
+    8765,
+    ping_interval=20,    # Send ping every 20s
+    ping_timeout=10,     # Close if no pong within 10s
+    close_timeout=5,     # Wait 5s for clean close
+):
+    await asyncio.Future()</code></pre>
+
+            <div class="tip">
+                <strong>💡 Tip:</strong> The <span class="inline-code">websockets</span> library handles ping/pong at the protocol level automatically. FastAPI requires you to implement application-level heartbeats if you need them.
+            </div>
+
+            <h2>Scaling WebSockets</h2>
+
+            <p>A single Python process can handle ~10,000 concurrent WebSocket connections. Beyond that, you need horizontal scaling.</p>
+
+            <h3>Redis Pub/Sub for multi-process broadcast</h3>
+
+<pre><code># When you run multiple server instances behind a load balancer,
+# clients on different servers can't see each other's messages.
+# Solution: Redis Pub/Sub as a message bus.
+
+pip install redis</code></pre>
+
+<pre><code># redis_pubsub.py
+import asyncio
+import redis.asyncio as redis
+import json
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+app = FastAPI()
+redis_client = redis.from_url("redis://localhost:6379")
+local_clients: list[WebSocket] = []
+
+
+async def redis_listener():
+    """Subscribe to Redis and forward messages to local WebSocket clients."""
+    pubsub = redis_client.pubsub()
+    await pubsub.subscribe("chat")
+
+    async for message in pubsub.listen():
+        if message["type"] == "message":
+            data = message["data"].decode()
+            dead = []
+            for ws in local_clients:
+                try:
+                    await ws.send_text(data)
+                except Exception:
+                    dead.append(ws)
+            for ws in dead:
+                local_clients.remove(ws)
+
+
+@app.on_event("startup")
+async def start_redis():
+    asyncio.create_task(redis_listener())
+
+
+@app.websocket("/ws/chat")
+async def chat(websocket: WebSocket):
+    await websocket.accept()
+    local_clients.append(websocket)
+    try:
+        while True:
+            text = await websocket.receive_text()
+            # Publish to Redis — all server instances receive it
+            await redis_client.publish("chat", json.dumps({
+                "user": id(websocket) % 10000,
+                "text": text,
+            }))
+    except WebSocketDisconnect:
+        local_clients.remove(websocket)</code></pre>
+
+            <h2>Testing WebSockets</h2>
+
+<pre><code># test_ws.py
+import pytest
+from fastapi.testclient import TestClient
+from app import app
+
+
+def test_websocket_echo():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as ws:
+        ws.send_text("hello")
+        data = ws.receive_text()
+        assert data == "You said: hello"
+
+
+def test_websocket_json():
+    client = TestClient(app)
+    with client.websocket_connect("/ws/chat/test?username=bot") as ws:
+        # Receive join message
+        join = ws.receive_json()
+        assert join["type"] == "system"
+
+        # Send message
+        ws.send_json({"text": "test message"})
+        msg = ws.receive_json()
+        assert msg["text"] == "test message"
+
+
+def test_websocket_auth_rejected():
+    client = TestClient(app)
+    with pytest.raises(Exception):
+        with client.websocket_connect("/ws/secure") as ws:
+            ws.receive_json()  # Should be closed by server</code></pre>
+
+            <h2>Production Checklist</h2>
+
+            <ul>
+                <li><strong>Use wss:// (TLS)</strong> — always encrypt WebSocket traffic in production</li>
+                <li><strong>Implement heartbeats</strong> — detect dead connections before they pile up</li>
+                <li><strong>Set connection limits</strong> — prevent a single client from opening thousands of connections</li>
+                <li><strong>Handle backpressure</strong> — if a client can't keep up, buffer or drop messages</li>
+                <li><strong>Rate limit messages</strong> — prevent spam/abuse on chat-like endpoints</li>
+                <li><strong>Use Redis Pub/Sub</strong> — for multi-process or multi-server deployments</li>
+                <li><strong>Monitor connections</strong> — track active count, message rates, error rates</li>
+                <li><strong>Graceful shutdown</strong> — close all connections cleanly on SIGTERM</li>
+                <li><strong>Message size limits</strong> — set <span class="inline-code">max_size</span> to prevent memory exhaustion</li>
+                <li><strong>Reconnection logic</strong> — clients should reconnect with exponential backoff</li>
+            </ul>
+
+            <div class="cta">
+                <p>🚀 Want production-ready Python tools, WebSocket templates, and automation scripts?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI — Complete Python Guide</a> — pair REST endpoints with WebSocket endpoints</li>
+                <li><a href="api-integration-python.html">Automate API Integrations with Python</a> — HTTP-based integrations and retry logic</li>
+                <li><a href="telegram-bot-python.html">How to Build a Telegram Bot in Python</a> — another real-time messaging pattern</li>
+                <li><a href="docker-python-deployment.html">Dockerize Python Apps — From Development to Production</a></li>
+                <li><a href="testing-python.html">Python Testing Guide — pytest, Mocking & CI</a></li>
+            </ul>
+
+            <p>Need a real-time Python app built for your project? I build WebSocket servers, APIs, bots, and automation tools. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
