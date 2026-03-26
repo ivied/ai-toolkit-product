@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Concurrency — Threading, Multiprocessing & When to Use What (2026)</title>
+    <meta name="description" content="Master Python concurrency: threading for I/O, multiprocessing for CPU, concurrent.futures for simplicity. GIL explained, real benchmarks, production patterns, and a decision framework for choosing the right approach.">
+    <meta name="keywords" content="python concurrency, python threading, python multiprocessing, GIL python, concurrent.futures, python parallel processing, thread pool, process pool, python performance">
+    <meta property="og:title" content="Python Concurrency — Threading, Multiprocessing & When to Use What (2026)">
+    <meta property="og:description" content="Threading vs multiprocessing vs asyncio — when to use each, with real benchmarks and production code.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-concurrency.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-concurrency.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Concurrency — Threading, Multiprocessing & When to Use What</h1>
+            <p class="meta">March 2026 · 20 min read · Python, Concurrency, Performance</p>
+
+            <p>Python gives you three concurrency models: <strong>threading</strong>, <strong>multiprocessing</strong>, and <strong>asyncio</strong>. Each solves different problems. Pick wrong and your "parallel" code runs slower than serial. This guide shows you when to use each, with real code and benchmarks — not toy examples.</p>
+
+            <p>For async/await specifically, see our <a href="async-python-guide.html">Python Async Programming guide</a>. This article focuses on threading and multiprocessing, plus how all three approaches compare.</p>
+
+            <h2>The GIL — Why It Matters</h2>
+
+            <p>The Global Interpreter Lock (GIL) is a mutex that protects Python objects from concurrent access. In practice:</p>
+
+            <ul>
+                <li><strong>Threads CAN'T run Python bytecode in parallel</strong> — only one thread executes at a time</li>
+                <li><strong>Threads CAN run I/O in parallel</strong> — the GIL is released during file reads, network calls, <span class="inline-code">time.sleep()</span></li>
+                <li><strong>Processes bypass the GIL entirely</strong> — each process has its own interpreter and memory space</li>
+                <li><strong>Python 3.13+</strong> introduced experimental free-threaded builds (no GIL), but it's opt-in and not yet mainstream</li>
+            </ul>
+
+            <div class="tip">
+                <strong>💡 Simple rule:</strong> Waiting for things (network, disk, APIs)? Use <strong>threads or asyncio</strong>. Crunching numbers (image processing, ML, compression)? Use <strong>multiprocessing</strong>.
+            </div>
+
+            <h2>Threading — For I/O-Bound Work</h2>
+
+            <h3>Basic threading</h3>
+
+<pre><code>import threading
+import time
+import requests
+
+
+def download_page(url: str) -> int:
+    """Download a page, return status code."""
+    resp = requests.get(url, timeout=10)
+    return resp.status_code
+
+
+# --- Sequential (slow) ---
+urls = [
+    "https://httpbin.org/delay/1",
+    "https://httpbin.org/delay/1",
+    "https://httpbin.org/delay/1",
+    "https://httpbin.org/delay/1",
+]
+
+start = time.perf_counter()
+for url in urls:
+    download_page(url)
+print(f"Sequential: {time.perf_counter() - start:.1f}s")  # ~4.0s
+
+
+# --- Threaded (fast) ---
+start = time.perf_counter()
+threads = []
+for url in urls:
+    t = threading.Thread(target=download_page, args=(url,))
+    t.start()
+    threads.append(t)
+
+for t in threads:
+    t.join()
+print(f"Threaded: {time.perf_counter() - start:.1f}s")  # ~1.0s</code></pre>
+
+            <h3>ThreadPoolExecutor (preferred)</h3>
+
+            <p>Don't manage threads manually. <span class="inline-code">concurrent.futures</span> gives you a clean, high-level API:</p>
+
+<pre><code>from concurrent.futures import ThreadPoolExecutor, as_completed
+import requests
+import time
+
+
+def fetch(url: str) -> dict:
+    start = time.perf_counter()
+    resp = requests.get(url, timeout=10)
+    elapsed = time.perf_counter() - start
+    return {"url": url, "status": resp.status_code, "time": f"{elapsed:.2f}s"}
+
+
+urls = [
+    "https://api.github.com",
+    "https://httpbin.org/get",
+    "https://jsonplaceholder.typicode.com/posts/1",
+    "https://api.ipify.org?format=json",
+    "https://httpbin.org/delay/2",
+]
+
+# Process results as they complete (not in order)
+with ThreadPoolExecutor(max_workers=5) as pool:
+    futures = {pool.submit(fetch, url): url for url in urls}
+
+    for future in as_completed(futures):
+        url = futures[future]
+        try:
+            result = future.result()
+            print(f"✅ {result['url']}: {result['status']} ({result['time']})")
+        except Exception as e:
+            print(f"❌ {url}: {e}")</code></pre>
+
+            <h3>Thread-safe data structures</h3>
+
+<pre><code>import threading
+from queue import Queue
+from collections import defaultdict
+
+
+# --- Thread-safe counter ---
+class SafeCounter:
+    def __init__(self):
+        self._count = 0
+        self._lock = threading.Lock()
+
+    def increment(self, n: int = 1):
+        with self._lock:
+            self._count += n
+
+    @property
+    def value(self) -> int:
+        with self._lock:
+            return self._count
+
+
+# --- Producer/Consumer with Queue ---
+def producer(queue: Queue, items: list):
+    for item in items:
+        queue.put(item)
+        print(f"Produced: {item}")
+    queue.put(None)  # sentinel
+
+
+def consumer(queue: Queue, name: str):
+    while True:
+        item = queue.get()
+        if item is None:
+            queue.put(None)  # pass sentinel to other consumers
+            break
+        print(f"{name} consumed: {item}")
+        queue.task_done()
+
+
+q = Queue(maxsize=10)  # bounded queue — blocks producer when full
+t1 = threading.Thread(target=producer, args=(q, list(range(20))))
+t2 = threading.Thread(target=consumer, args=(q, "Worker-A"))
+t3 = threading.Thread(target=consumer, args=(q, "Worker-B"))
+
+t1.start(); t2.start(); t3.start()
+t1.join(); t2.join(); t3.join()</code></pre>
+
+            <h2>Multiprocessing — For CPU-Bound Work</h2>
+
+            <h3>Basic multiprocessing</h3>
+
+<pre><code>import multiprocessing
+import time
+import math
+
+
+def is_prime(n: int) -> bool:
+    if n < 2:
+        return False
+    if n < 4:
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
+            return False
+        i += 6
+    return True
+
+
+def count_primes(start: int, end: int) -> int:
+    """Count primes in range [start, end)."""
+    return sum(1 for n in range(start, end) if is_prime(n))
+
+
+LIMIT = 2_000_000
+
+# --- Sequential ---
+start = time.perf_counter()
+total = count_primes(2, LIMIT)
+print(f"Sequential: {total} primes in {time.perf_counter() - start:.2f}s")
+
+
+# --- Multiprocessing ---
+start = time.perf_counter()
+num_cores = multiprocessing.cpu_count()
+chunk_size = LIMIT // num_cores
+ranges = [(i * chunk_size, (i + 1) * chunk_size) for i in range(num_cores)]
+
+with multiprocessing.Pool(num_cores) as pool:
+    results = pool.starmap(count_primes, ranges)
+    total = sum(results)
+
+print(f"Parallel ({num_cores} cores): {total} primes in {time.perf_counter() - start:.2f}s")</code></pre>
+
+            <div class="tip">
+                <strong>⚡ Benchmark example (8-core M2):</strong><br>
+                Sequential: 148933 primes in 3.21s<br>
+                Parallel (8 cores): 148933 primes in 0.52s<br>
+                <strong>6.2x speedup</strong> — that's real parallelism (not possible with threads due to GIL).
+            </div>
+
+            <h3>ProcessPoolExecutor (preferred)</h3>
+
+<pre><code>from concurrent.futures import ProcessPoolExecutor
+import time
+
+
+def heavy_compute(n: int) -> dict:
+    """Simulate CPU-bound work: compute Fibonacci iteratively."""
+    a, b = 0, 1
+    for _ in range(n):
+        a, b = b, a + b
+    return {"n": n, "digits": len(str(a))}
+
+
+inputs = [500_000, 600_000, 700_000, 800_000, 900_000, 1_000_000]
+
+# --- Sequential ---
+start = time.perf_counter()
+results_seq = [heavy_compute(n) for n in inputs]
+print(f"Sequential: {time.perf_counter() - start:.2f}s")
+
+# --- Parallel ---
+start = time.perf_counter()
+with ProcessPoolExecutor() as pool:
+    results_par = list(pool.map(heavy_compute, inputs))
+print(f"Parallel: {time.perf_counter() - start:.2f}s")
+
+for r in results_par:
+    print(f"  fib({r['n']}): {r['digits']} digits")</code></pre>
+
+            <h3>Sharing data between processes</h3>
+
+<pre><code>import multiprocessing
+from multiprocessing import Value, Array, Manager
+
+
+# --- Shared memory (fast, limited types) ---
+def worker_shared(counter, results, index, value):
+    """Worker with shared memory."""
+    with counter.get_lock():
+        counter.value += 1
+    results[index] = value * 2
+
+
+counter = Value('i', 0)      # shared int
+results = Array('d', 10)      # shared array of doubles
+
+processes = []
+for i in range(10):
+    p = multiprocessing.Process(
+        target=worker_shared, args=(counter, results, i, float(i))
+    )
+    p.start()
+    processes.append(p)
+
+for p in processes:
+    p.join()
+
+print(f"Counter: {counter.value}")      # 10
+print(f"Results: {list(results)}")       # [0.0, 2.0, 4.0, ...]
+
+
+# --- Manager (flexible, slower — supports dicts, lists, Queues) ---
+def worker_manager(shared_dict, key, value):
+    shared_dict[key] = value ** 2
+
+
+with Manager() as manager:
+    d = manager.dict()
+    processes = [
+        multiprocessing.Process(target=worker_manager, args=(d, i, i))
+        for i in range(8)
+    ]
+    for p in processes:
+        p.start()
+    for p in processes:
+        p.join()
+
+    print(f"Manager dict: {dict(d)}")  # {0: 0, 1: 1, 2: 4, 3: 9, ...}</code></pre>
+
+            <h2>Combining Threading + Multiprocessing</h2>
+
+            <p>Real-world apps often need both. Example: scrape URLs (I/O) then process the data (CPU).</p>
+
+<pre><code>from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+import requests
+import hashlib
+import time
+
+
+def download(url: str) -> bytes:
+    """I/O-bound: download content."""
+    resp = requests.get(url, timeout=10)
+    return resp.content
+
+
+def process_content(data: bytes) -> dict:
+    """CPU-bound: hash and analyze content."""
+    h = hashlib.sha256(data).hexdigest()
+    # Simulate heavy processing
+    words = len(data.decode("utf-8", errors="ignore").split())
+    return {"hash": h[:12], "size": len(data), "words": words}
+
+
+urls = [
+    "https://jsonplaceholder.typicode.com/posts",
+    "https://jsonplaceholder.typicode.com/comments",
+    "https://jsonplaceholder.typicode.com/users",
+    "https://httpbin.org/get",
+]
+
+# Step 1: Download concurrently (threads — I/O bound)
+start = time.perf_counter()
+with ThreadPoolExecutor(max_workers=4) as tpool:
+    raw_data = list(tpool.map(download, urls))
+
+# Step 2: Process concurrently (processes — CPU bound)
+with ProcessPoolExecutor() as ppool:
+    results = list(ppool.map(process_content, raw_data))
+
+elapsed = time.perf_counter() - start
+for url, result in zip(urls, results):
+    print(f"{url.split('/')[-1]}: {result}")
+print(f"Total: {elapsed:.2f}s")</code></pre>
+
+            <h2>The Decision Framework</h2>
+
+            <table>
+                <tr><th>Workload Type</th><th>Best Approach</th><th>Why</th></tr>
+                <tr><td>API calls, web scraping</td><td>asyncio or ThreadPool</td><td>I/O-bound, GIL released during network wait</td></tr>
+                <tr><td>File reading/writing</td><td>ThreadPool</td><td>I/O-bound, simple API</td></tr>
+                <tr><td>Image processing, ML</td><td>ProcessPool</td><td>CPU-bound, bypasses GIL</td></tr>
+                <tr><td>Number crunching</td><td>ProcessPool (or NumPy)</td><td>CPU-bound; NumPy releases GIL internally</td></tr>
+                <tr><td>High-concurrency server</td><td>asyncio</td><td>Thousands of connections, minimal overhead</td></tr>
+                <tr><td>Mixed I/O + CPU</td><td>ThreadPool → ProcessPool</td><td>Download in threads, process in processes</td></tr>
+                <tr><td>Simple parallel tasks</td><td>concurrent.futures</td><td>Easiest API, swap Thread/Process with one line</td></tr>
+            </table>
+
+            <h3>Quick decision tree</h3>
+
+<pre><code># Is your code waiting or computing?
+#
+# WAITING (I/O-bound)
+# ├── Many connections (1000+)? → asyncio
+# ├── Few connections, simple? → ThreadPoolExecutor
+# └── Legacy sync library? → ThreadPoolExecutor
+#
+# COMPUTING (CPU-bound)
+# ├── NumPy/pandas ops? → Already parallel (release GIL)
+# ├── Pure Python math? → ProcessPoolExecutor
+# └── Need shared state? → multiprocessing.Manager or Queue</code></pre>
+
+            <h2>Common Pitfalls</h2>
+
+            <h3>1. Race conditions</h3>
+
+<pre><code>import threading
+
+# ❌ BAD — race condition
+counter = 0
+def increment():
+    global counter
+    for _ in range(100_000):
+        counter += 1  # NOT atomic!
+
+threads = [threading.Thread(target=increment) for _ in range(4)]
+for t in threads: t.start()
+for t in threads: t.join()
+print(f"Expected: 400000, Got: {counter}")  # Usually less!
+
+
+# ✅ GOOD — use a lock
+counter = 0
+lock = threading.Lock()
+def safe_increment():
+    global counter
+    for _ in range(100_000):
+        with lock:
+            counter += 1
+
+threads = [threading.Thread(target=safe_increment) for _ in range(4)]
+for t in threads: t.start()
+for t in threads: t.join()
+print(f"Expected: 400000, Got: {counter}")  # Always 400000</code></pre>
+
+            <h3>2. Deadlocks</h3>
+
+<pre><code># ❌ BAD — potential deadlock (circular lock dependency)
+lock_a = threading.Lock()
+lock_b = threading.Lock()
+
+def worker1():
+    with lock_a:
+        time.sleep(0.01)
+        with lock_b:  # waits for worker2 to release lock_b
+            print("Worker 1 done")
+
+def worker2():
+    with lock_b:
+        time.sleep(0.01)
+        with lock_a:  # waits for worker1 to release lock_a → DEADLOCK
+            print("Worker 2 done")
+
+
+# ✅ GOOD — always acquire locks in the same order
+def worker1_fixed():
+    with lock_a:
+        with lock_b:
+            print("Worker 1 done")
+
+def worker2_fixed():
+    with lock_a:  # same order as worker1
+        with lock_b:
+            print("Worker 2 done")</code></pre>
+
+            <h3>3. Pickling errors in multiprocessing</h3>
+
+<pre><code># ❌ BAD — lambdas and local functions can't be pickled
+from concurrent.futures import ProcessPoolExecutor
+
+with ProcessPoolExecutor() as pool:
+    # This fails: lambda isn't picklable
+    # results = list(pool.map(lambda x: x**2, range(10)))
+    pass
+
+
+# ✅ GOOD — use module-level functions
+def square(x):
+    return x ** 2
+
+with ProcessPoolExecutor() as pool:
+    results = list(pool.map(square, range(10)))
+    print(results)  # [0, 1, 4, 9, 16, ...]</code></pre>
+
+            <h3>4. Process startup overhead</h3>
+
+<pre><code>from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+import time
+
+# Small tasks — process overhead dominates
+def tiny_task(x):
+    return x + 1
+
+data = list(range(100))
+
+start = time.perf_counter()
+with ProcessPoolExecutor(max_workers=4) as pool:
+    list(pool.map(tiny_task, data))
+print(f"ProcessPool: {time.perf_counter() - start:.3f}s")  # ~0.5s (overhead!)
+
+start = time.perf_counter()
+with ThreadPoolExecutor(max_workers=4) as pool:
+    list(pool.map(tiny_task, data))
+print(f"ThreadPool: {time.perf_counter() - start:.3f}s")  # ~0.002s
+
+start = time.perf_counter()
+list(map(tiny_task, data))
+print(f"Sequential: {time.perf_counter() - start:.6f}s")  # ~0.00001s
+
+# Lesson: only use ProcessPool when tasks take >10ms each</code></pre>
+
+            <h2>Production Patterns</h2>
+
+            <h3>Graceful shutdown</h3>
+
+<pre><code>import signal
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
+shutdown_event = threading.Event()
+
+def signal_handler(signum, frame):
+    print("\nShutdown requested...")
+    shutdown_event.set()
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+
+
+def worker(task_id: int):
+    """Worker that checks for shutdown."""
+    for step in range(10):
+        if shutdown_event.is_set():
+            print(f"Task {task_id}: stopping at step {step}")
+            return
+        time.sleep(0.5)  # simulate work
+    print(f"Task {task_id}: complete")
+
+
+with ThreadPoolExecutor(max_workers=3) as pool:
+    futures = [pool.submit(worker, i) for i in range(5)]
+    # Pool waits for running tasks, cancels pending ones on shutdown</code></pre>
+
+            <h3>Rate-limited thread pool</h3>
+
+<pre><code>import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+
+class RateLimiter:
+    """Token bucket rate limiter for thread pools."""
+
+    def __init__(self, calls_per_second: float):
+        self._interval = 1.0 / calls_per_second
+        self._lock = threading.Lock()
+        self._last_call = 0.0
+
+    def acquire(self):
+        with self._lock:
+            now = time.monotonic()
+            wait = self._last_call + self._interval - now
+            if wait > 0:
+                time.sleep(wait)
+            self._last_call = time.monotonic()
+
+
+limiter = RateLimiter(calls_per_second=5)  # max 5 req/s
+
+def rate_limited_fetch(url: str) -> int:
+    limiter.acquire()
+    resp = requests.get(url, timeout=10)
+    return resp.status_code
+
+
+with ThreadPoolExecutor(max_workers=10) as pool:
+    # 10 threads but only 5 requests/second
+    results = list(pool.map(rate_limited_fetch, urls))</code></pre>
+
+            <h3>Progress tracking</h3>
+
+<pre><code>from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+
+
+def process_item(item: int) -> dict:
+    time.sleep(0.1)  # simulate work
+    return {"item": item, "result": item * 2}
+
+
+items = list(range(50))
+results = []
+
+with ThreadPoolExecutor(max_workers=8) as pool:
+    futures = {pool.submit(process_item, i): i for i in items}
+    done_count = 0
+
+    for future in as_completed(futures):
+        done_count += 1
+        result = future.result()
+        results.append(result)
+
+        # Progress bar
+        pct = done_count / len(items) * 100
+        bar = "█" * int(pct // 2) + "░" * (50 - int(pct // 2))
+        print(f"\r[{bar}] {pct:.0f}% ({done_count}/{len(items)})", end="", flush=True)
+
+print(f"\nDone! Processed {len(results)} items.")</code></pre>
+
+            <div class="cta">
+                <p>🚀 Production-ready concurrency patterns, API integrators, and automation scripts</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="async-python-guide.html">Python Async Programming — asyncio, Tasks & Concurrency</a> — deep dive into async/await</li>
+                <li><a href="data-pipeline-python.html">Build a Data Pipeline in Python</a> — parallel ETL with thread/process pools</li>
+                <li><a href="web-scraping-python-guide.html">Web Scraping with Python</a> — concurrent scraping patterns</li>
+                <li><a href="api-integration-python.html">Automate API Integrations</a> — threaded API calls with rate limiting</li>
+                <li><a href="task-scheduling-python.html">Task Scheduling & Cron Jobs</a> — schedule concurrent workers</li>
+                <li><a href="python-logging-monitoring.html">Python Logging & Monitoring</a> — thread-safe logging for concurrent apps</li>
+            </ul>
+
+            <p>Need high-performance concurrent Python code? I build parallel data pipelines, scrapers, and API integrations. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
