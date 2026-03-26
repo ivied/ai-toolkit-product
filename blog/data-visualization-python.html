@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization with Python — Matplotlib, Seaborn & Plotly (2026)</title>
+    <meta name="description" content="Complete guide to Python data visualization. Matplotlib charts, Seaborn statistical plots, Plotly interactive dashboards, styling, exporting, and production-ready visualization patterns.">
+    <meta name="keywords" content="python data visualization, matplotlib, seaborn, plotly, python charts, python graphs, data viz, interactive plots, python dashboard, python plotting 2026">
+    <meta property="og:title" content="Data Visualization with Python — Matplotlib, Seaborn & Plotly (2026)">
+    <meta property="og:description" content="From basic charts to interactive dashboards: Matplotlib, Seaborn, Plotly, styling, exporting, and real-world visualization patterns.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/data-visualization-python.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/data-visualization-python.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../index.html">← AI Toolkit</a>
+            <a href="index.html">Blog</a>
+        </nav>
+
+        <h1>Data Visualization with Python — Matplotlib, Seaborn & Plotly</h1>
+        <p class="meta">By Kristy · March 2026 · 20 min read</p>
+
+        <p>Data without visualization is just numbers on a screen. The right chart transforms raw data into insight — revealing trends, outliers, and patterns that spreadsheets hide. Python's visualization ecosystem is the best in any language: Matplotlib for full control, Seaborn for beautiful statistical plots, and Plotly for interactive web-ready dashboards.</p>
+
+        <p>This guide covers all three libraries with practical, copy-paste examples. By the end, you'll know which tool to reach for and how to build production-quality visualizations.</p>
+
+        <h2>Setup & Installation</h2>
+
+        <pre><code># Install all three libraries
+pip install matplotlib seaborn plotly pandas numpy
+
+# Optional: Jupyter integration
+pip install jupyterlab kaleido  # kaleido for static Plotly exports</code></pre>
+
+        <p>Quick imports you'll use throughout:</p>
+
+        <pre><code>import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import pandas as pd
+import numpy as np</code></pre>
+
+        <h2>Matplotlib — The Foundation</h2>
+
+        <p>Matplotlib is Python's original plotting library. Every other viz library builds on top of it. It's verbose but gives you pixel-level control over every element.</p>
+
+        <h3>Figure and Axes: The Mental Model</h3>
+
+        <p>Understanding Matplotlib's object model saves hours of confusion:</p>
+
+        <pre><code># Figure = the canvas (window/image)
+# Axes = a single plot area within the figure
+# Artist = everything you see (lines, text, ticks, labels)
+
+fig, ax = plt.subplots()  # 1 figure, 1 axes
+fig, axes = plt.subplots(2, 3, figsize=(12, 8))  # 2×3 grid
+
+# ALWAYS use the OO interface (ax.plot), not plt.plot
+# plt.plot is fine for quick scripts, but ax.plot scales</code></pre>
+
+        <h3>Line Charts</h3>
+
+        <pre><code>dates = pd.date_range("2026-01-01", periods=90, freq="D")
+revenue = np.cumsum(np.random.randn(90) * 100 + 50)
+costs = np.cumsum(np.random.randn(90) * 60 + 30)
+
+fig, ax = plt.subplots(figsize=(10, 5))
+
+ax.plot(dates, revenue, label="Revenue", color="#667eea", linewidth=2)
+ax.plot(dates, costs, label="Costs", color="#e06c75", linewidth=2, linestyle="--")
+
+# Fill between for profit zone
+ax.fill_between(dates, revenue, costs,
+                where=(revenue > costs),
+                alpha=0.15, color="#667eea", label="Profit")
+ax.fill_between(dates, revenue, costs,
+                where=(revenue <= costs),
+                alpha=0.15, color="#e06c75", label="Loss")
+
+ax.set_title("Revenue vs Costs — Q1 2026", fontsize=14, fontweight="bold")
+ax.set_xlabel("Date")
+ax.set_ylabel("Amount ($)")
+ax.legend(loc="upper left")
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%b %d"))
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig("revenue_chart.png", dpi=150, bbox_inches="tight")
+plt.show()</code></pre>
+
+        <h3>Bar Charts</h3>
+
+        <pre><code>categories = ["Python", "JavaScript", "Rust", "Go", "TypeScript"]
+scores = [92, 78, 85, 71, 76]
+colors = ["#667eea", "#764ba2", "#e06c75", "#98c379", "#e5c07b"]
+
+fig, ax = plt.subplots(figsize=(8, 5))
+
+bars = ax.barh(categories, scores, color=colors, edgecolor="white", linewidth=0.5)
+
+# Add value labels on bars
+for bar, score in zip(bars, scores):
+    ax.text(bar.get_width() - 3, bar.get_y() + bar.get_height() / 2,
+            f"{score}%", va="center", ha="right", fontweight="bold",
+            color="white", fontsize=11)
+
+ax.set_xlim(0, 100)
+ax.set_title("Developer Satisfaction by Language (2026)", fontsize=13)
+ax.spines[["top", "right"]].set_visible(False)
+
+plt.tight_layout()
+plt.show()</code></pre>
+
+        <h3>Scatter Plots with Size & Color</h3>
+
+        <pre><code>np.random.seed(42)
+n = 80
+x = np.random.uniform(20, 80, n)        # Age
+y = np.random.uniform(30000, 150000, n)  # Salary
+sizes = np.random.uniform(50, 500, n)    # Experience (bubble size)
+colors = np.random.uniform(0, 10, n)     # Performance score
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+scatter = ax.scatter(x, y, s=sizes, c=colors, cmap="viridis",
+                     alpha=0.7, edgecolors="white", linewidth=0.5)
+
+cbar = plt.colorbar(scatter, ax=ax, label="Performance Score")
+ax.set_xlabel("Age")
+ax.set_ylabel("Salary ($)")
+ax.set_title("Employee Distribution", fontsize=14)
+
+# Add size legend
+for size, label in [(100, "Junior"), (300, "Mid"), (500, "Senior")]:
+    ax.scatter([], [], s=size, c="gray", alpha=0.5, label=label)
+ax.legend(title="Experience", loc="upper left", framealpha=0.8)
+
+plt.tight_layout()
+plt.show()</code></pre>
+
+        <h3>Histograms & Distributions</h3>
+
+        <pre><code>data_a = np.random.normal(50, 10, 1000)
+data_b = np.random.normal(65, 12, 1000)
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# Overlapping histograms
+axes[0].hist(data_a, bins=40, alpha=0.6, color="#667eea", label="Group A")
+axes[0].hist(data_b, bins=40, alpha=0.6, color="#e06c75", label="Group B")
+axes[0].set_title("Score Distribution")
+axes[0].legend()
+
+# KDE (smooth density)
+axes[1].hist(data_a, bins=40, density=True, alpha=0.3, color="#667eea")
+from scipy import stats
+x_range = np.linspace(10, 100, 200)
+axes[1].plot(x_range, stats.norm.pdf(x_range, 50, 10),
+             color="#667eea", linewidth=2, label="Group A KDE")
+axes[1].plot(x_range, stats.norm.pdf(x_range, 65, 12),
+             color="#e06c75", linewidth=2, label="Group B KDE")
+axes[1].set_title("Density Comparison")
+axes[1].legend()
+
+for ax in axes:
+    ax.spines[["top", "right"]].set_visible(False)
+
+plt.tight_layout()
+plt.show()</code></pre>
+
+        <h3>Subplots & Complex Layouts</h3>
+
+        <pre><code># GridSpec for non-uniform layouts
+from matplotlib.gridspec import GridSpec
+
+fig = plt.figure(figsize=(12, 8))
+gs = GridSpec(2, 3, figure=fig, hspace=0.3, wspace=0.3)
+
+ax_main = fig.add_subplot(gs[0, :2])    # Top-left, spans 2 columns
+ax_side = fig.add_subplot(gs[0, 2])      # Top-right
+ax_bottom1 = fig.add_subplot(gs[1, 0])   # Bottom row, 3 equal
+ax_bottom2 = fig.add_subplot(gs[1, 1])
+ax_bottom3 = fig.add_subplot(gs[1, 2])
+
+# Fill each subplot with different chart types
+x = np.linspace(0, 10, 100)
+ax_main.plot(x, np.sin(x), color="#667eea")
+ax_main.set_title("Main Time Series")
+
+ax_side.bar(["A", "B", "C"], [30, 50, 20], color=["#667eea", "#764ba2", "#e06c75"])
+ax_side.set_title("Category Split")
+
+ax_bottom1.scatter(np.random.randn(50), np.random.randn(50), alpha=0.5)
+ax_bottom1.set_title("Scatter")
+
+ax_bottom2.hist(np.random.randn(200), bins=20, color="#98c379")
+ax_bottom2.set_title("Distribution")
+
+ax_bottom3.pie([40, 30, 20, 10], labels=["A", "B", "C", "D"],
+               autopct="%1.0f%%", colors=["#667eea", "#764ba2", "#e06c75", "#e5c07b"])
+ax_bottom3.set_title("Breakdown")
+
+plt.suptitle("Dashboard Overview — Q1 2026", fontsize=15, fontweight="bold")
+plt.show()</code></pre>
+
+        <div class="tip">
+            <strong>💡 Pro tip:</strong> Always use <code class="inline-code">fig, ax = plt.subplots()</code> instead of <code class="inline-code">plt.figure()</code>. The OO interface is more explicit, works in functions, and avoids "current axes" confusion that plagues Matplotlib beginners.
+        </div>
+
+        <h2>Seaborn — Statistical Visualization Made Beautiful</h2>
+
+        <p>Seaborn wraps Matplotlib with sensible defaults and statistical chart types. It integrates directly with Pandas DataFrames — just pass column names.</p>
+
+        <h3>Theme & Style Setup</h3>
+
+        <pre><code># Set global style — do this once at the top of your script
+sns.set_theme(style="darkgrid", palette="muted", font_scale=1.1)
+
+# Other styles: whitegrid, dark, white, ticks
+# Built-in palettes: deep, muted, pastel, bright, dark, colorblind
+
+# Custom palette
+custom_palette = ["#667eea", "#764ba2", "#e06c75", "#98c379", "#e5c07b"]
+sns.set_palette(custom_palette)</code></pre>
+
+        <h3>Distribution Plots</h3>
+
+        <pre><code># Generate sample data
+np.random.seed(42)
+df = pd.DataFrame({
+    "salary": np.concatenate([
+        np.random.normal(70000, 15000, 200),
+        np.random.normal(95000, 20000, 150),
+        np.random.normal(120000, 25000, 100),
+    ]),
+    "department": (["Engineering"] * 200 +
+                   ["Product"] * 150 +
+                   ["Management"] * 100),
+    "experience": np.concatenate([
+        np.random.uniform(1, 8, 200),
+        np.random.uniform(2, 10, 150),
+        np.random.uniform(5, 15, 100),
+    ])
+})
+
+# KDE plot — smooth density
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+
+sns.kdeplot(data=df, x="salary", hue="department", fill=True, alpha=0.3, ax=axes[0])
+axes[0].set_title("Salary Distribution by Dept")
+
+# Box plot — quartiles + outliers
+sns.boxplot(data=df, x="department", y="salary", ax=axes[1])
+axes[1].set_title("Salary Box Plot")
+
+# Violin plot — distribution shape
+sns.violinplot(data=df, x="department", y="salary", inner="quart", ax=axes[2])
+axes[2].set_title("Salary Violin Plot")
+
+plt.tight_layout()
+plt.show()</code></pre>
+
+        <h3>Heatmaps — Correlation & Pivot Tables</h3>
+
+        <pre><code># Correlation matrix
+metrics = pd.DataFrame(np.random.randn(200, 6), columns=[
+    "Revenue", "Users", "Retention", "NPS", "Costs", "Churn"
+])
+# Make some realistic correlations
+metrics["Revenue"] = metrics["Users"] * 50 + np.random.randn(200) * 10
+metrics["Churn"] = -metrics["Retention"] * 0.8 + np.random.randn(200) * 0.3
+
+corr = metrics.corr()
+
+fig, ax = plt.subplots(figsize=(8, 6))
+mask = np.triu(np.ones_like(corr, dtype=bool))  # Hide upper triangle
+
+sns.heatmap(corr, mask=mask, annot=True, fmt=".2f", cmap="RdBu_r",
+            center=0, vmin=-1, vmax=1, square=True, linewidths=0.5,
+            cbar_kws={"shrink": 0.8, "label": "Correlation"}, ax=ax)
+
+ax.set_title("Metric Correlation Matrix", fontsize=14, pad=15)
+plt.tight_layout()
+plt.show()</code></pre>
+
+        <h3>Pair Plots — Multivariate Exploration</h3>
+
+        <pre><code># Pair plot shows relationships between all numeric pairs
+# Great for initial EDA (Exploratory Data Analysis)
+g = sns.pairplot(df, hue="department", diag_kind="kde",
+                 plot_kws={"alpha": 0.5, "s": 20},
+                 height=2.5, aspect=1.2)
+
+g.figure.suptitle("Multivariate Exploration", y=1.02, fontsize=14)
+plt.show()</code></pre>
+
+        <h3>Categorical Plots</h3>
+
+        <pre><code># Count, strip, and swarm plots
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+# Count plot — frequency bars
+data = pd.DataFrame({
+    "rating": np.random.choice(["★", "★★", "★★★", "★★★★", "★★★★★"], 500,
+                                p=[0.05, 0.1, 0.2, 0.35, 0.3]),
+    "platform": np.random.choice(["iOS", "Android"], 500)
+})
+sns.countplot(data=data, x="rating", hue="platform", ax=axes[0])
+axes[0].set_title("Rating Distribution by Platform")
+
+# Strip plot — individual data points
+sns.stripplot(data=df, x="department", y="salary", jitter=True,
+              alpha=0.4, size=4, ax=axes[1])
+axes[1].set_title("Individual Salaries")
+
+# Swarm plot — non-overlapping points (slower for large data)
+small_df = df.sample(100, random_state=42)
+sns.swarmplot(data=small_df, x="department", y="salary", size=4, ax=axes[2])
+axes[2].set_title("Swarm Plot (no overlap)")
+
+plt.tight_layout()
+plt.show()</code></pre>
+
+        <h3>Regression Plots</h3>
+
+        <pre><code># lmplot — scatter + regression line with confidence interval
+g = sns.lmplot(data=df, x="experience", y="salary", hue="department",
+               height=5, aspect=1.5, scatter_kws={"alpha": 0.4, "s": 30},
+               ci=95)  # 95% confidence interval shading
+
+g.set_axis_labels("Years of Experience", "Salary ($)")
+g.figure.suptitle("Salary vs Experience by Department", y=1.02)
+plt.show()</code></pre>
+
+        <div class="tip">
+            <strong>💡 Pro tip:</strong> Use <code class="inline-code">sns.set_palette("colorblind")</code> for accessibility. About 8% of men have color vision deficiency — the colorblind palette ensures your charts are readable by everyone.
+        </div>
+
+        <h2>Plotly — Interactive Visualization</h2>
+
+        <p>Plotly produces interactive HTML charts with zoom, hover tooltips, and pan — perfect for dashboards, reports, and web apps. The Express API (<code class="inline-code">plotly.express</code>) is as concise as Seaborn but outputs interactive plots.</p>
+
+        <h3>Plotly Express — Quick Start</h3>
+
+        <pre><code>import plotly.express as px
+
+# Line chart with hover data
+df_ts = pd.DataFrame({
+    "date": pd.date_range("2026-01-01", periods=90, freq="D"),
+    "users": np.cumsum(np.random.poisson(50, 90)),
+    "revenue": np.cumsum(np.random.uniform(100, 500, 90)),
+})
+
+fig = px.line(df_ts, x="date", y=["users", "revenue"],
+              title="Growth Metrics — Q1 2026",
+              labels={"value": "Count", "variable": "Metric"},
+              template="plotly_dark")
+
+fig.update_layout(hovermode="x unified",
+                  legend=dict(orientation="h", y=1.1))
+fig.show()  # Opens in browser
+fig.write_html("growth.html")  # Save as standalone HTML</code></pre>
+
+        <h3>Bar Charts with Animation</h3>
+
+        <pre><code># Animated bar chart race
+months = pd.date_range("2025-01", periods=12, freq="ME")
+languages = ["Python", "JavaScript", "Rust", "Go", "TypeScript"]
+
+frames = []
+for i, month in enumerate(months):
+    for lang in languages:
+        base = {"Python": 80, "JavaScript": 75, "Rust": 60,
+                "Go": 55, "TypeScript": 70}[lang]
+        frames.append({
+            "month": month.strftime("%Y-%m"),
+            "language": lang,
+            "popularity": base + np.random.randint(-5, 15) + i * 2
+        })
+
+df_anim = pd.DataFrame(frames)
+
+fig = px.bar(df_anim, x="popularity", y="language",
+             animation_frame="month", orientation="h",
+             range_x=[0, 120], color="language",
+             title="Language Popularity Over Time",
+             template="plotly_dark")
+
+fig.update_layout(showlegend=False)
+fig.show()</code></pre>
+
+        <h3>Scatter with Facets & Trendlines</h3>
+
+        <pre><code>fig = px.scatter(df, x="experience", y="salary",
+                 color="department", size="salary",
+                 facet_col="department",
+                 trendline="lowess",  # Smooth trendline
+                 title="Salary vs Experience",
+                 template="plotly_dark",
+                 hover_data=["experience", "salary"])
+
+fig.update_layout(height=400)
+fig.show()</code></pre>
+
+        <h3>Plotly Graph Objects — Full Control</h3>
+
+        <pre><code>import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# Multi-panel dashboard
+fig = make_subplots(
+    rows=2, cols=2,
+    subplot_titles=("Revenue Trend", "Department Split",
+                    "User Growth", "Performance Distribution"),
+    specs=[[{"type": "scatter"}, {"type": "pie"}],
+           [{"type": "bar"}, {"type": "histogram"}]]
+)
+
+# Panel 1: Line chart
+days = pd.date_range("2026-01-01", periods=60, freq="D")
+fig.add_trace(
+    go.Scatter(x=days, y=np.cumsum(np.random.randn(60) * 100 + 200),
+               mode="lines", name="Revenue",
+               line=dict(color="#667eea", width=2)),
+    row=1, col=1
+)
+
+# Panel 2: Pie chart
+fig.add_trace(
+    go.Pie(labels=["Engineering", "Product", "Sales", "Support"],
+           values=[40, 25, 20, 15],
+           marker_colors=["#667eea", "#764ba2", "#e06c75", "#98c379"]),
+    row=1, col=2
+)
+
+# Panel 3: Bar chart
+months = ["Jan", "Feb", "Mar", "Apr", "May"]
+fig.add_trace(
+    go.Bar(x=months, y=[1200, 1400, 1100, 1600, 1800],
+           name="New Users", marker_color="#667eea"),
+    row=2, col=1
+)
+fig.add_trace(
+    go.Bar(x=months, y=[800, 900, 750, 1100, 1300],
+           name="Active Users", marker_color="#764ba2"),
+    row=2, col=1
+)
+
+# Panel 4: Histogram
+fig.add_trace(
+    go.Histogram(x=np.random.normal(75, 10, 500), nbinsx=30,
+                 name="Scores", marker_color="#98c379"),
+    row=2, col=2
+)
+
+fig.update_layout(
+    height=700, template="plotly_dark",
+    title_text="Company Dashboard — March 2026",
+    showlegend=True
+)
+fig.show()</code></pre>
+
+        <h3>Geographic Maps</h3>
+
+        <pre><code># Choropleth map — color by country
+df_geo = pd.DataFrame({
+    "country": ["USA", "BRA", "DEU", "JPN", "IND", "GBR", "ARG", "AUS"],
+    "users": [50000, 12000, 8000, 15000, 25000, 9000, 3000, 6000],
+    "revenue": [500000, 80000, 120000, 200000, 60000, 95000, 20000, 55000]
+})
+
+fig = px.choropleth(df_geo, locations="country",
+                    color="users", hover_name="country",
+                    hover_data=["revenue"],
+                    color_continuous_scale="Viridis",
+                    title="User Distribution by Country",
+                    template="plotly_dark")
+
+fig.update_layout(geo=dict(bgcolor="#0a0a0f"))
+fig.show()</code></pre>
+
+        <h3>Sunburst & Treemap — Hierarchical Data</h3>
+
+        <pre><code># Sunburst — nested categories
+df_sun = pd.DataFrame({
+    "region": ["Americas", "Americas", "Americas", "Europe", "Europe", "Asia", "Asia"],
+    "country": ["USA", "Brazil", "Argentina", "Germany", "UK", "Japan", "India"],
+    "team": ["Engineering", "Product", "Sales", "Engineering", "Sales", "Engineering", "Product"],
+    "headcount": [120, 30, 15, 45, 20, 60, 35]
+})
+
+fig = px.sunburst(df_sun, path=["region", "country", "team"],
+                  values="headcount",
+                  title="Organization Structure",
+                  template="plotly_dark",
+                  color_continuous_scale="Blues")
+fig.show()
+
+# Treemap — same data, different layout
+fig = px.treemap(df_sun, path=["region", "country", "team"],
+                 values="headcount",
+                 title="Team Distribution (Treemap)",
+                 template="plotly_dark")
+fig.show()</code></pre>
+
+        <div class="tip">
+            <strong>💡 Pro tip:</strong> Plotly charts in production? Use <code class="inline-code">fig.write_html("chart.html", include_plotlyjs="cdn")</code> to save bandwidth — the JS library loads from CDN instead of being embedded (saves ~3MB per file).
+        </div>
+
+        <h2>Styling & Theming</h2>
+
+        <h3>Matplotlib Custom Styles</h3>
+
+        <pre><code># Create a reusable style
+custom_style = {
+    "figure.facecolor": "#0a0a0f",
+    "axes.facecolor": "#12121a",
+    "axes.edgecolor": "#1e1e2e",
+    "axes.labelcolor": "#e0e0e0",
+    "text.color": "#e0e0e0",
+    "xtick.color": "#888",
+    "ytick.color": "#888",
+    "grid.color": "#1e1e2e",
+    "grid.alpha": 0.5,
+    "font.family": "sans-serif",
+    "font.size": 11,
+    "axes.grid": True,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+}
+
+# Apply globally
+plt.rcParams.update(custom_style)
+
+# Or use as context manager (temporary)
+with plt.rc_context(custom_style):
+    fig, ax = plt.subplots()
+    ax.plot([1, 2, 3], [1, 4, 9])
+    plt.show()
+
+# Save as .mplstyle file for reuse across projects
+# Put in ~/.config/matplotlib/stylelib/darkmode.mplstyle</code></pre>
+
+        <h3>Plotly Custom Templates</h3>
+
+        <pre><code>import plotly.io as pio
+
+# Create a custom template based on plotly_dark
+custom_template = go.layout.Template()
+custom_template.layout = go.Layout(
+    font=dict(family="Inter, sans-serif", color="#e0e0e0"),
+    paper_bgcolor="#0a0a0f",
+    plot_bgcolor="#12121a",
+    title=dict(font=dict(size=18, color="#667eea")),
+    colorway=["#667eea", "#764ba2", "#e06c75", "#98c379", "#e5c07b",
+              "#56b6c2", "#c678dd", "#d19a66"],
+    xaxis=dict(gridcolor="#1e1e2e", zerolinecolor="#1e1e2e"),
+    yaxis=dict(gridcolor="#1e1e2e", zerolinecolor="#1e1e2e"),
+)
+
+# Register and set as default
+pio.templates["custom_dark"] = custom_template
+pio.templates.default = "custom_dark"
+
+# Now all plots use your theme automatically
+fig = px.line(x=[1,2,3,4,5], y=[10,20,15,30,25], title="Auto-themed Chart")
+fig.show()</code></pre>
+
+        <h2>Exporting & Saving</h2>
+
+        <h3>Matplotlib Export Options</h3>
+
+        <pre><code># PNG — for web, presentations
+fig.savefig("chart.png", dpi=200, bbox_inches="tight",
+            facecolor=fig.get_facecolor(), transparent=False)
+
+# SVG — for web (scalable, editable)
+fig.savefig("chart.svg", format="svg", bbox_inches="tight")
+
+# PDF — for print, papers
+fig.savefig("chart.pdf", format="pdf", bbox_inches="tight")
+
+# High-res for retina displays
+fig.savefig("chart@2x.png", dpi=300, bbox_inches="tight")
+
+# Multiple formats at once
+for fmt in ["png", "svg", "pdf"]:
+    fig.savefig(f"chart.{fmt}", format=fmt, dpi=200, bbox_inches="tight")</code></pre>
+
+        <h3>Plotly Export Options</h3>
+
+        <pre><code># Interactive HTML
+fig.write_html("dashboard.html")
+
+# HTML with CDN (smaller file)
+fig.write_html("dashboard.html", include_plotlyjs="cdn")
+
+# Static images (requires kaleido)
+fig.write_image("chart.png", width=1200, height=600, scale=2)
+fig.write_image("chart.svg")
+fig.write_image("chart.pdf")
+
+# JSON (for embedding in web apps)
+fig.write_json("chart.json")
+
+# Embed in Flask/FastAPI
+import json
+chart_json = fig.to_json()
+# Pass to template: {{ chart_json | safe }}</code></pre>
+
+        <div class="tip">
+            <strong>💡 Pro tip:</strong> For automated reports, save Matplotlib to bytes buffer instead of disk:
+            <pre><code>from io import BytesIO
+buf = BytesIO()
+fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
+buf.seek(0)
+# Now attach to email, upload to S3, embed in PDF...</code></pre>
+        </div>
+
+        <h2>Real-World Patterns</h2>
+
+        <h3>Pattern 1: A/B Test Results Dashboard</h3>
+
+        <pre><code>def plot_ab_test(control, variant, metric_name="Conversion Rate"):
+    """Visualize A/B test results with statistical context."""
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+
+    # 1. Distribution comparison
+    axes[0].hist(control, bins=30, alpha=0.6, color="#667eea", label="Control", density=True)
+    axes[0].hist(variant, bins=30, alpha=0.6, color="#98c379", label="Variant", density=True)
+    axes[0].axvline(np.mean(control), color="#667eea", linestyle="--", alpha=0.8)
+    axes[0].axvline(np.mean(variant), color="#98c379", linestyle="--", alpha=0.8)
+    axes[0].set_title(f"{metric_name} Distribution")
+    axes[0].legend()
+
+    # 2. Cumulative means over time
+    c_cumulative = np.cumsum(control) / np.arange(1, len(control) + 1)
+    v_cumulative = np.cumsum(variant) / np.arange(1, len(variant) + 1)
+    axes[1].plot(c_cumulative, color="#667eea", label="Control")
+    axes[1].plot(v_cumulative, color="#98c379", label="Variant")
+    axes[1].set_title("Convergence Over Samples")
+    axes[1].legend()
+
+    # 3. Lift summary
+    lift = (np.mean(variant) - np.mean(control)) / np.mean(control) * 100
+    color = "#98c379" if lift > 0 else "#e06c75"
+    axes[2].barh(["Lift"], [lift], color=color)
+    axes[2].axvline(0, color="#888", linestyle="-", linewidth=0.8)
+    axes[2].set_title(f"Lift: {lift:+.1f}%")
+    axes[2].set_xlabel("% Change")
+
+    plt.suptitle(f"A/B Test: {metric_name}", fontsize=14, fontweight="bold")
+    plt.tight_layout()
+    return fig
+
+# Usage
+control = np.random.binomial(1, 0.12, 5000).astype(float)
+variant = np.random.binomial(1, 0.14, 5000).astype(float)
+fig = plot_ab_test(control, variant, "Conversion Rate")
+plt.show()</code></pre>
+
+        <h3>Pattern 2: Time Series with Anomaly Highlighting</h3>
+
+        <pre><code>def plot_timeseries_anomalies(dates, values, window=7, threshold=2.0):
+    """Plot time series with rolling stats and anomaly detection."""
+    series = pd.Series(values, index=dates)
+    rolling_mean = series.rolling(window).mean()
+    rolling_std = series.rolling(window).std()
+
+    upper = rolling_mean + threshold * rolling_std
+    lower = rolling_mean - threshold * rolling_std
+    anomalies = (series > upper) | (series < lower)
+
+    fig, ax = plt.subplots(figsize=(12, 5))
+
+    ax.plot(dates, values, alpha=0.5, color="#667eea", linewidth=1, label="Actual")
+    ax.plot(dates, rolling_mean, color="#764ba2", linewidth=2, label=f"{window}-day MA")
+
+    ax.fill_between(dates, upper, lower, alpha=0.1, color="#667eea",
+                    label=f"±{threshold}σ band")
+
+    # Highlight anomalies
+    ax.scatter(dates[anomalies], series[anomalies],
+               color="#e06c75", s=50, zorder=5, label="Anomalies")
+
+    ax.set_title("Time Series with Anomaly Detection", fontsize=14)
+    ax.legend(loc="upper left")
+    ax.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    return fig
+
+# Usage
+dates = pd.date_range("2026-01-01", periods=180, freq="D")
+values = np.cumsum(np.random.randn(180)) + np.sin(np.arange(180) * 0.1) * 5
+# Inject anomalies
+values[50] += 15
+values[120] -= 12
+
+fig = plot_timeseries_anomalies(dates, values)
+plt.show()</code></pre>
+
+        <h3>Pattern 3: Automated Report Generator</h3>
+
+        <pre><code>from pathlib import Path
+from datetime import datetime
+
+class ReportGenerator:
+    """Generate standardized visualization reports."""
+
+    def __init__(self, output_dir: str = "reports", style: str = "dark"):
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(exist_ok=True)
+        self.figures: list[tuple[str, plt.Figure]] = []
+
+        if style == "dark":
+            plt.rcParams.update({
+                "figure.facecolor": "#0a0a0f",
+                "axes.facecolor": "#12121a",
+                "text.color": "#e0e0e0",
+            })
+
+    def add_chart(self, name: str, fig: plt.Figure):
+        self.figures.append((name, fig))
+
+    def save_all(self, prefix: str = ""):
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        saved = []
+
+        for name, fig in self.figures:
+            filename = f"{prefix}{name}_{timestamp}.png"
+            path = self.output_dir / filename
+            fig.savefig(path, dpi=200, bbox_inches="tight",
+                       facecolor=fig.get_facecolor())
+            saved.append(str(path))
+            plt.close(fig)
+
+        return saved
+
+    def generate_html_report(self, title: str = "Report"):
+        """Create HTML report embedding all charts."""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        images = self.save_all()
+
+        html = f"""&lt;!DOCTYPE html&gt;
+&lt;html&gt;&lt;head&gt;&lt;title&gt;{title}&lt;/title&gt;
+&lt;style&gt;body {{ background: #0a0a0f; color: #e0e0e0;
+font-family: sans-serif; max-width: 900px; margin: 0 auto; padding: 2rem; }}
+img {{ max-width: 100%; border-radius: 8px; margin: 1rem 0; }}&lt;/style&gt;
+&lt;/head&gt;&lt;body&gt;
+&lt;h1&gt;{title}&lt;/h1&gt;&lt;p&gt;Generated: {timestamp}&lt;/p&gt;"""
+
+        for name, path in zip([n for n, _ in self.figures], images):
+            html += f"&lt;h2&gt;{name}&lt;/h2&gt;&lt;img src='{path}'&gt;"
+
+        html += "&lt;/body&gt;&lt;/html&gt;"
+
+        report_path = self.output_dir / f"report_{datetime.now():%Y%m%d}.html"
+        report_path.write_text(html)
+        return str(report_path)</code></pre>
+
+        <h2>Library Comparison — When to Use What</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Matplotlib</th>
+                    <th>Seaborn</th>
+                    <th>Plotly</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Learning curve</td>
+                    <td>Steep</td>
+                    <td>Easy</td>
+                    <td>Easy</td>
+                </tr>
+                <tr>
+                    <td>Customization</td>
+                    <td>Unlimited</td>
+                    <td>Good</td>
+                    <td>Very good</td>
+                </tr>
+                <tr>
+                    <td>Interactivity</td>
+                    <td>No</td>
+                    <td>No</td>
+                    <td>Yes (hover, zoom, pan)</td>
+                </tr>
+                <tr>
+                    <td>Statistical plots</td>
+                    <td>Manual</td>
+                    <td>Built-in</td>
+                    <td>Built-in (Express)</td>
+                </tr>
+                <tr>
+                    <td>Web/dashboard</td>
+                    <td>Static images</td>
+                    <td>Static images</td>
+                    <td>HTML/Dash</td>
+                </tr>
+                <tr>
+                    <td>3D plots</td>
+                    <td>Basic</td>
+                    <td>No</td>
+                    <td>Excellent</td>
+                </tr>
+                <tr>
+                    <td>Maps</td>
+                    <td>With Basemap</td>
+                    <td>No</td>
+                    <td>Built-in</td>
+                </tr>
+                <tr>
+                    <td>Animation</td>
+                    <td>FuncAnimation</td>
+                    <td>No</td>
+                    <td>Built-in frames</td>
+                </tr>
+                <tr>
+                    <td>Best for</td>
+                    <td>Publications, pixel control</td>
+                    <td>EDA, statistical analysis</td>
+                    <td>Dashboards, presentations</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Performance Tips</h2>
+
+        <pre><code># 1. Use Matplotlib's Agg backend for headless servers
+import matplotlib
+matplotlib.use("Agg")  # Before importing pyplot!
+import matplotlib.pyplot as plt
+
+# 2. Batch rendering — avoid recreating figures
+fig, ax = plt.subplots()
+for data_chunk in data_chunks:
+    ax.clear()
+    ax.plot(data_chunk)
+    fig.savefig(f"chart_{i}.png")
+plt.close(fig)  # Free memory
+
+# 3. Large datasets — use rasterized=True for scatter
+ax.scatter(big_x, big_y, rasterized=True, s=1, alpha=0.1)
+# Rasterization converts to bitmap within SVG/PDF → smaller files
+
+# 4. Plotly — use WebGL for 100k+ points
+fig = px.scatter(large_df, x="x", y="y",
+                 render_mode="webgl")  # Hardware-accelerated
+
+# 5. Downsample for visualization
+# You don't need 1M points — the eye can't tell the difference
+from scipy.signal import decimate
+downsampled = decimate(signal, q=10)  # Keep every 10th point
+
+# 6. Use categories instead of strings
+df["category"] = pd.Categorical(df["category"])  # Faster groupby in Seaborn</code></pre>
+
+        <h2>Common Pitfalls & Fixes</h2>
+
+        <pre><code># ❌ BAD: plt.show() in scripts that save files
+fig.savefig("out.png")
+plt.show()  # Opens GUI window, blocks script
+
+# ✅ GOOD: Either show OR save, or use non-interactive backend
+fig.savefig("out.png")
+plt.close()
+
+# ❌ BAD: Not closing figures (memory leak)
+for i in range(100):
+    fig, ax = plt.subplots()
+    ax.plot(data[i])
+    fig.savefig(f"plot_{i}.png")
+    # fig stays in memory!
+
+# ✅ GOOD: Always close
+for i in range(100):
+    fig, ax = plt.subplots()
+    ax.plot(data[i])
+    fig.savefig(f"plot_{i}.png")
+    plt.close(fig)
+
+# ❌ BAD: Default ugly Matplotlib charts
+plt.plot(x, y)
+
+# ✅ GOOD: Minimal cleanup makes a huge difference
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(x, y, linewidth=2, color="#667eea")
+ax.spines[["top", "right"]].set_visible(False)
+ax.grid(True, alpha=0.3)
+ax.set_title("Clean Chart", fontsize=14)
+
+# ❌ BAD: Pie charts for comparisons (hard to read angles)
+# ✅ GOOD: Use horizontal bar charts instead
+
+# ❌ BAD: Rainbow color palettes (ugly + inaccessible)
+# ✅ GOOD: Sequential (one variable) or qualitative (categories)
+#    Use cmap="viridis" (perceptually uniform) or sns palette "colorblind"</code></pre>
+
+        <div class="cta">
+            <p><strong>🚀 Get the Complete AI Toolkit</strong></p>
+            <p>50+ production-ready Python scripts, including visualization templates, data pipelines, and automation tools.</p>
+            <p><a href="https://payhip.com/b/8BKSl">Buy on Payhip ($19)</a> · <a href="../index.html">Learn more</a></p>
+        </div>
+
+        <h2>Related Articles</h2>
+
+        <ul>
+            <li><a href="data-pipeline-python.html">Build a Data Pipeline in Python</a> — ETL, streaming, and data processing</li>
+            <li><a href="database-operations-python.html">Database Operations — SQLite, PostgreSQL & SQLAlchemy</a> — query and manage data sources</li>
+            <li><a href="fastapi-rest-api.html">FastAPI REST API — Complete Guide</a> — serve visualizations via API endpoints</li>
+            <li><a href="python-logging-monitoring.html">Python Logging & Monitoring</a> — track pipeline health and data quality</li>
+        </ul>
+
+        <footer>
+            <p>Written by Kristy · <a href="mailto:openclawmara@tutamail.com">openclawmara@tutamail.com</a></p>
+            <p>© 2026 · <a href="../index.html">AI Toolkit</a> · <a href="index.html">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
