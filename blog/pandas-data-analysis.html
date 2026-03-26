@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Data Analysis with Pandas — From Raw Data to Insights (2026)</title>
+    <meta name="description" content="Complete pandas guide for data analysis in Python. Load, clean, transform, aggregate, and visualize data. Real-world examples with CSV, JSON, SQL, and API sources.">
+    <meta name="keywords" content="pandas tutorial, python data analysis, pandas dataframe, data cleaning python, pandas groupby, pandas merge, python csv analysis, data wrangling python, pandas 2026">
+    <meta property="og:title" content="Python Data Analysis with Pandas — From Raw Data to Insights (2026)">
+    <meta property="og:description" content="Master pandas for data analysis: load, clean, transform, aggregate, visualize. Real datasets, real patterns.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/pandas-data-analysis.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/pandas-data-analysis.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Data Analysis with Pandas — From Raw Data to Insights</h1>
+            <p class="meta">March 2026 · 22 min read · Python, Pandas, Data Analysis</p>
+
+            <p>Pandas is the backbone of data analysis in Python. Whether you're cleaning messy CSV exports, analyzing sales data, or building dashboards — pandas is where the work happens. This guide takes you from loading raw data to producing actionable insights, with patterns you'll use daily.</p>
+
+            <h2>Setup and Loading Data</h2>
+
+            <h3>Install</h3>
+
+<pre><code>pip install pandas numpy openpyxl sqlalchemy</code></pre>
+
+            <h3>Loading from different sources</h3>
+
+<pre><code>import pandas as pd
+
+# CSV — the most common
+df = pd.read_csv("sales.csv")
+
+# CSV with options
+df = pd.read_csv(
+    "sales.csv",
+    parse_dates=["date"],       # auto-parse date columns
+    dtype={"zip_code": str},    # force string (don't lose leading zeros)
+    na_values=["N/A", "null", ""],  # treat as NaN
+    usecols=["date", "product", "amount", "region"],  # only load what you need
+)
+
+# Excel
+df = pd.read_excel("report.xlsx", sheet_name="Q1 Sales")
+
+# JSON
+df = pd.read_json("api_response.json")
+
+# From SQL database
+from sqlalchemy import create_engine
+engine = create_engine("sqlite:///analytics.db")
+df = pd.read_sql("SELECT * FROM orders WHERE year = 2026", engine)
+
+# From clipboard (great for quick analysis)
+df = pd.read_clipboard()
+
+# From dict (for testing / building manually)
+df = pd.DataFrame({
+    "product": ["Widget A", "Widget B", "Widget C"],
+    "price": [29.99, 49.99, 19.99],
+    "units_sold": [150, 80, 300],
+})</code></pre>
+
+            <div class="tip">
+                <strong>💡 Large files:</strong> For files &gt;1GB, use <span class="inline-code">pd.read_csv(..., chunksize=10000)</span> to process in chunks, or switch to <span class="inline-code">polars</span> (faster for big data). For SQL, always filter in the query — don't load everything.
+            </div>
+
+            <h2>First Look: Understanding Your Data</h2>
+
+<pre><code># Shape and types
+print(f"Rows: {len(df):,}, Columns: {df.shape[1]}")
+print(df.dtypes)
+
+# Quick stats
+df.describe()            # numeric summary (mean, std, min, max, quartiles)
+df.describe(include="O")  # categorical summary (count, unique, top, freq)
+
+# Missing values
+print(df.isnull().sum())
+print(f"Missing: {df.isnull().sum().sum()} total ({df.isnull().mean().mean():.1%})")
+
+# Sample rows
+df.head(10)
+df.sample(5)   # random sample — better than head for spotting patterns
+df.tail(3)
+
+# Unique values
+df["region"].value_counts()
+df["product"].nunique()  # count of unique values
+
+# Memory usage
+df.info(memory_usage="deep")</code></pre>
+
+            <h2>Data Cleaning</h2>
+
+            <p>Real data is messy. Here's how to fix the most common problems.</p>
+
+            <h3>Missing values</h3>
+
+<pre><code># Check what's missing
+df.isnull().sum().sort_values(ascending=False)
+
+# Drop rows where critical columns are missing
+df = df.dropna(subset=["product", "amount"])
+
+# Fill numeric with median (better than mean — outlier-resistant)
+df["price"] = df["price"].fillna(df["price"].median())
+
+# Fill categorical with mode
+df["region"] = df["region"].fillna(df["region"].mode()[0])
+
+# Forward-fill time series (carry last known value)
+df["stock_price"] = df["stock_price"].ffill()
+
+# Interpolate (linear between known points)
+df["temperature"] = df["temperature"].interpolate(method="linear")</code></pre>
+
+            <h3>Type conversion</h3>
+
+<pre><code># Strings to datetime
+df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d")
+df["date"] = pd.to_datetime(df["date"], format="mixed")  # mixed formats
+
+# Strings to numeric (handles "$1,234.56")
+df["revenue"] = (
+    df["revenue"]
+    .str.replace("$", "", regex=False)
+    .str.replace(",", "", regex=False)
+    .astype(float)
+)
+
+# Categorical (saves memory, enables ordering)
+df["priority"] = pd.Categorical(
+    df["priority"],
+    categories=["low", "medium", "high"],
+    ordered=True,
+)
+
+# Downcast numeric types (save memory)
+df["quantity"] = pd.to_numeric(df["quantity"], downcast="integer")</code></pre>
+
+            <h3>String cleaning</h3>
+
+<pre><code># Standardize text
+df["name"] = df["name"].str.strip().str.title()
+df["email"] = df["email"].str.lower().str.strip()
+df["phone"] = df["phone"].str.replace(r"[^\d+]", "", regex=True)
+
+# Extract patterns
+df["domain"] = df["email"].str.extract(r"@(\w+\.\w+)")
+df["year"] = df["date_string"].str.extract(r"(\d{4})")
+
+# Replace values
+df["status"] = df["status"].replace({
+    "cancelled": "canceled",
+    "ACTIVE": "active",
+    "inactive ": "inactive",
+})</code></pre>
+
+            <h3>Deduplication</h3>
+
+<pre><code># Find duplicates
+dupes = df[df.duplicated(subset=["email", "date"], keep=False)]
+print(f"Found {len(dupes)} duplicate rows")
+
+# Remove duplicates (keep first occurrence)
+df = df.drop_duplicates(subset=["email", "date"], keep="first")
+
+# Remove based on all columns
+df = df.drop_duplicates()</code></pre>
+
+            <h2>Filtering and Selecting</h2>
+
+<pre><code># Boolean filtering
+high_value = df[df["amount"] > 1000]
+recent = df[df["date"] >= "2026-01-01"]
+
+# Multiple conditions (use & for AND, | for OR, ~ for NOT)
+target = df[
+    (df["region"] == "LATAM") &
+    (df["amount"] > 500) &
+    (~df["product"].str.contains("legacy", case=False))
+]
+
+# .query() — cleaner for complex filters
+target = df.query("region == 'LATAM' and amount > 500")
+
+# isin — filter by list
+top_products = df[df["product"].isin(["Widget A", "Widget B", "Premium"])]
+
+# between
+mid_range = df[df["price"].between(20, 100)]
+
+# String matching
+python_jobs = df[df["title"].str.contains("python", case=False, na=False)]
+
+# Select columns
+subset = df[["product", "amount", "date"]]
+subset = df.loc[:, "product":"amount"]  # slice by column name
+
+# Conditional assignment
+df.loc[df["amount"] > 10000, "tier"] = "enterprise"
+df.loc[df["amount"] <= 10000, "tier"] = "standard"
+
+# np.where for vectorized if-else
+import numpy as np
+df["size"] = np.where(df["amount"] > 5000, "large", "small")</code></pre>
+
+            <h2>Transformations</h2>
+
+            <h3>Creating new columns</h3>
+
+<pre><code># Arithmetic
+df["total"] = df["price"] * df["quantity"]
+df["margin"] = (df["revenue"] - df["cost"]) / df["revenue"] * 100
+
+# Date parts
+df["year"] = df["date"].dt.year
+df["month"] = df["date"].dt.month
+df["weekday"] = df["date"].dt.day_name()
+df["quarter"] = df["date"].dt.quarter
+df["is_weekend"] = df["date"].dt.dayofweek >= 5
+
+# Binning continuous values
+df["price_bucket"] = pd.cut(
+    df["price"],
+    bins=[0, 25, 50, 100, float("inf")],
+    labels=["budget", "mid", "premium", "luxury"],
+)
+
+# Ranking
+df["rank"] = df["revenue"].rank(ascending=False, method="dense")
+
+# Cumulative calculations
+df["cumulative_sales"] = df.sort_values("date")["amount"].cumsum()
+df["running_avg"] = df["amount"].expanding().mean()
+
+# Rolling window (7-day moving average)
+df = df.sort_values("date")
+df["ma_7d"] = df["amount"].rolling(window=7).mean()</code></pre>
+
+            <h3>Apply for custom logic</h3>
+
+<pre><code># apply — for complex per-row logic
+def categorize_customer(row):
+    if row["total_spent"] > 10000:
+        return "VIP"
+    elif row["orders"] > 20:
+        return "loyal"
+    elif row["last_order_days"] > 90:
+        return "at_risk"
+    return "regular"
+
+df["segment"] = df.apply(categorize_customer, axis=1)
+
+# Vectorized is 10-100x faster than apply — prefer it
+# Instead of apply, use np.select for multi-condition:
+conditions = [
+    df["total_spent"] > 10000,
+    df["orders"] > 20,
+    df["last_order_days"] > 90,
+]
+choices = ["VIP", "loyal", "at_risk"]
+df["segment"] = np.select(conditions, choices, default="regular")</code></pre>
+
+            <div class="tip">
+                <strong>⚡ Performance rule:</strong> <span class="inline-code">apply()</span> is a Python loop in disguise. For numeric operations, use vectorized pandas/numpy operations. They're 10-100x faster. Use <span class="inline-code">apply()</span> only when logic is too complex to vectorize.
+            </div>
+
+            <h2>Grouping and Aggregation</h2>
+
+            <p>This is where pandas really shines — turning raw rows into business insights.</p>
+
+<pre><code># Basic groupby
+by_region = df.groupby("region")["amount"].sum()
+by_product = df.groupby("product")["amount"].agg(["sum", "mean", "count"])
+
+# Multiple aggregations
+summary = df.groupby("region").agg(
+    total_revenue=("amount", "sum"),
+    avg_order=("amount", "mean"),
+    order_count=("amount", "count"),
+    unique_products=("product", "nunique"),
+    first_order=("date", "min"),
+    last_order=("date", "max"),
+).sort_values("total_revenue", ascending=False)
+
+# Group by multiple columns
+monthly = df.groupby([df["date"].dt.to_period("M"), "region"]).agg(
+    revenue=("amount", "sum"),
+    orders=("amount", "count"),
+).reset_index()
+
+# Percentage of total
+df["pct_of_total"] = df["amount"] / df["amount"].sum() * 100
+
+# Percentage within group
+df["pct_in_region"] = df.groupby("region")["amount"].transform(
+    lambda x: x / x.sum() * 100
+)
+
+# Top N per group
+top_3_per_region = (
+    df.sort_values("amount", ascending=False)
+    .groupby("region")
+    .head(3)
+)</code></pre>
+
+            <h3>Pivot tables</h3>
+
+<pre><code># Pivot: rows=region, columns=product, values=revenue
+pivot = df.pivot_table(
+    values="amount",
+    index="region",
+    columns="product",
+    aggfunc="sum",
+    fill_value=0,
+    margins=True,  # add row/column totals
+)
+
+# Cross-tabulation (frequency table)
+ct = pd.crosstab(
+    df["region"],
+    df["customer_type"],
+    normalize="index",  # show as percentages
+)
+
+# Melt (unpivot): wide → long format
+long = pd.melt(
+    df,
+    id_vars=["date", "region"],
+    value_vars=["q1_sales", "q2_sales", "q3_sales", "q4_sales"],
+    var_name="quarter",
+    value_name="sales",
+)</code></pre>
+
+            <h2>Merging and Joining</h2>
+
+<pre><code># Inner join (only matching rows)
+merged = pd.merge(orders, customers, on="customer_id", how="inner")
+
+# Left join (keep all orders, add customer info where available)
+merged = pd.merge(orders, customers, on="customer_id", how="left")
+
+# Join on different column names
+merged = pd.merge(
+    orders, products,
+    left_on="product_code",
+    right_on="sku",
+    how="left",
+)
+
+# Multiple join keys
+merged = pd.merge(orders, inventory, on=["product_id", "warehouse_id"])
+
+# Concatenate (stack vertically)
+all_months = pd.concat([jan_df, feb_df, mar_df], ignore_index=True)
+
+# Concatenate with source tracking
+all_months = pd.concat(
+    [jan_df, feb_df, mar_df],
+    keys=["jan", "feb", "mar"],
+    names=["month", "row"],
+)
+
+# Anti-join: rows in A not in B
+orders_without_customer = orders[
+    ~orders["customer_id"].isin(customers["customer_id"])
+]</code></pre>
+
+            <h2>Time Series Analysis</h2>
+
+<pre><code># Set datetime index
+df = df.set_index("date").sort_index()
+
+# Resample (change frequency)
+monthly = df["amount"].resample("M").sum()
+weekly = df["amount"].resample("W").mean()
+quarterly = df["amount"].resample("Q").agg(["sum", "mean", "count"])
+
+# Period-over-period change
+df["mom_change"] = df["revenue"].pct_change()    # month-over-month
+df["yoy_change"] = df["revenue"].pct_change(12)  # year-over-year
+
+# Rolling calculations
+df["sma_30"] = df["price"].rolling(30).mean()       # 30-day simple moving average
+df["ema_30"] = df["price"].ewm(span=30).mean()      # exponential moving average
+df["volatility"] = df["price"].rolling(30).std()     # 30-day volatility
+
+# Shift (lag/lead)
+df["prev_month"] = df["revenue"].shift(1)
+df["next_month"] = df["revenue"].shift(-1)
+
+# Date range and reindex (fill gaps)
+full_range = pd.date_range(df.index.min(), df.index.max(), freq="D")
+df = df.reindex(full_range).ffill()  # forward-fill missing days</code></pre>
+
+            <h2>Exporting Results</h2>
+
+<pre><code># CSV
+df.to_csv("output.csv", index=False)
+
+# Excel (multiple sheets)
+with pd.ExcelWriter("report.xlsx", engine="openpyxl") as writer:
+    summary.to_excel(writer, sheet_name="Summary")
+    df.to_excel(writer, sheet_name="Raw Data", index=False)
+    pivot.to_excel(writer, sheet_name="Pivot")
+
+# JSON
+df.to_json("output.json", orient="records", indent=2)
+
+# SQL
+df.to_sql("analysis_results", engine, if_exists="replace", index=False)
+
+# Clipboard (paste into spreadsheet)
+df.to_clipboard(index=False)
+
+# Markdown (for reports)
+print(df.head(10).to_markdown(index=False))</code></pre>
+
+            <h2>Real-World Analysis Pattern</h2>
+
+            <p>Here's a complete analysis workflow — the kind you'd do for a weekly business report:</p>
+
+<pre><code>import pandas as pd
+import numpy as np
+
+
+def analyze_sales(filepath: str) -> dict:
+    """Complete sales analysis pipeline."""
+
+    # 1. Load and clean
+    df = pd.read_csv(
+        filepath,
+        parse_dates=["order_date"],
+        dtype={"zip_code": str},
+    )
+    df = df.dropna(subset=["order_date", "amount"])
+    df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
+    df = df[df["amount"] > 0]  # remove refunds/errors
+
+    # 2. Enrich
+    df["month"] = df["order_date"].dt.to_period("M")
+    df["weekday"] = df["order_date"].dt.day_name()
+    df["is_weekend"] = df["order_date"].dt.dayofweek >= 5
+
+    # 3. Key metrics
+    total_revenue = df["amount"].sum()
+    avg_order = df["amount"].mean()
+    median_order = df["amount"].median()
+    order_count = len(df)
+
+    # 4. Monthly trend
+    monthly = df.groupby("month").agg(
+        revenue=("amount", "sum"),
+        orders=("amount", "count"),
+        aov=("amount", "mean"),
+    )
+    monthly["growth"] = monthly["revenue"].pct_change() * 100
+
+    # 5. Top performers
+    top_products = (
+        df.groupby("product")["amount"]
+        .agg(["sum", "count"])
+        .sort_values("sum", ascending=False)
+        .head(10)
+    )
+
+    top_regions = (
+        df.groupby("region")["amount"]
+        .sum()
+        .sort_values(ascending=False)
+    )
+
+    # 6. Customer segmentation
+    customer_stats = df.groupby("customer_id").agg(
+        total_spent=("amount", "sum"),
+        orders=("amount", "count"),
+        avg_order=("amount", "mean"),
+        first_order=("order_date", "min"),
+        last_order=("order_date", "max"),
+    )
+
+    conditions = [
+        customer_stats["total_spent"] > customer_stats["total_spent"].quantile(0.9),
+        customer_stats["orders"] > 10,
+        customer_stats["orders"] == 1,
+    ]
+    segments = ["VIP", "loyal", "one-time"]
+    customer_stats["segment"] = np.select(conditions, segments, default="regular")
+
+    # 7. Weekend vs weekday
+    weekend_pct = df[df["is_weekend"]]["amount"].sum() / total_revenue * 100
+
+    return {
+        "total_revenue": total_revenue,
+        "order_count": order_count,
+        "avg_order": avg_order,
+        "monthly_trend": monthly,
+        "top_products": top_products,
+        "top_regions": top_regions,
+        "customer_segments": customer_stats["segment"].value_counts(),
+        "weekend_revenue_pct": weekend_pct,
+    }
+
+
+# Run
+results = analyze_sales("sales_2026.csv")
+print(f"Revenue: ${results['total_revenue']:,.2f}")
+print(f"Orders: {results['order_count']:,}")
+print(f"\nMonthly trend:\n{results['monthly_trend']}")
+print(f"\nTop products:\n{results['top_products']}")
+print(f"\nCustomer segments:\n{results['customer_segments']}")</code></pre>
+
+            <h2>Performance Tips</h2>
+
+            <ul>
+                <li><strong>Use vectorized operations</strong> — <span class="inline-code">df["a"] + df["b"]</span> is 100x faster than <span class="inline-code">df.apply(lambda r: r.a + r.b, axis=1)</span></li>
+                <li><strong>Filter early</strong> — reduce dataframe size before heavy operations</li>
+                <li><strong>Use categories</strong> — <span class="inline-code">df["status"] = df["status"].astype("category")</span> saves 90%+ memory for low-cardinality columns</li>
+                <li><strong>Avoid iterrows</strong> — it's 1000x slower than vectorized. Use <span class="inline-code">itertuples()</span> if you must iterate</li>
+                <li><strong>Use read_csv options</strong> — <span class="inline-code">usecols</span>, <span class="inline-code">dtype</span>, <span class="inline-code">chunksize</span> to control memory</li>
+                <li><strong>Consider polars</strong> — for datasets &gt;1GB, polars is 5-10x faster than pandas</li>
+            </ul>
+
+            <div class="cta">
+                <p>🚀 Want production-ready data analysis scripts, automation tools, and pipeline templates?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="data-visualization-python.html">Data Visualization with Python — Matplotlib, Seaborn & Plotly</a> — visualize your pandas analysis</li>
+                <li><a href="data-pipeline-python.html">Build a Data Pipeline in Python — ETL from Scratch</a> — automate data loading and transformation</li>
+                <li><a href="database-operations-python.html">Python Database Operations</a> — load data from SQL databases</li>
+                <li><a href="python-performance.html">Python Performance Optimization</a> — speed up your analysis code</li>
+                <li><a href="web-scraping-python-guide.html">Web Scraping with Python</a> — collect data to analyze</li>
+            </ul>
+
+            <p>Need custom data analysis or automated reporting? I build Python data pipelines, dashboards, and analytics tools. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
