@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Performance Optimization — Profile, Tune & Speed Up Your Code (2026)</title>
+    <meta name="description" content="Practical guide to making Python code faster. Profiling with cProfile and line_profiler, memory optimization, data structure choices, Cython, NumPy vectorization, caching, async I/O, and real benchmarks.">
+    <meta name="keywords" content="python performance, python optimization, cprofile, line_profiler, python memory, python speed, numpy vectorization, cython, python benchmarking, python profiling">
+    <meta property="og:title" content="Python Performance Optimization — Profile, Tune & Speed Up Your Code (2026)">
+    <meta property="og:description" content="Make Python fast: profiling, data structures, vectorization, caching, async. Measure first, optimize what matters.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-performance.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-performance.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Performance Optimization — Profile, Tune & Speed Up Your Code</h1>
+            <p class="meta">March 2026 · 22 min read · Python, Performance, Profiling, Optimization</p>
+
+            <p>Python is "slow" — and it doesn't matter for 90% of what you build. But for the other 10%, you need to know where the time goes and how to fix it. This guide covers the full optimization workflow: measure, identify bottlenecks, optimize what matters, and verify the improvement.</p>
+
+            <div class="tip">
+                <strong>🎯 Rule #1:</strong> Never optimize without profiling first. Your intuition about what's slow is almost always wrong. Measure, then optimize.
+            </div>
+
+            <h2>Step 1: Profiling — Find the Bottleneck</h2>
+
+            <h3>Quick timing with timeit</h3>
+
+<pre><code>import timeit
+
+# Time a single expression
+result = timeit.timeit(
+    'sum(range(10_000))',
+    number=1000,
+)
+print(f"{result:.3f}s for 1000 iterations")
+
+# Time a function
+def my_function():
+    return [x ** 2 for x in range(10_000)]
+
+result = timeit.timeit(my_function, number=100)
+print(f"{result:.3f}s for 100 calls")
+
+# Compare two approaches
+setup = "data = list(range(10_000))"
+
+t1 = timeit.timeit("sorted(data)", setup=setup, number=1000)
+t2 = timeit.timeit("data.sort()", setup=setup, number=1000)
+print(f"sorted(): {t1:.3f}s | .sort(): {t2:.3f}s")
+# .sort() is faster — in-place, no copy</code></pre>
+
+            <h3>cProfile — function-level profiling</h3>
+
+<pre><code>import cProfile
+import pstats
+from io import StringIO
+
+
+def profile_it(func, *args, **kwargs):
+    """Profile a function and print top bottlenecks."""
+    profiler = cProfile.Profile()
+    profiler.enable()
+    result = func(*args, **kwargs)
+    profiler.disable()
+
+    stream = StringIO()
+    stats = pstats.Stats(profiler, stream=stream)
+    stats.sort_stats("cumulative")
+    stats.print_stats(20)  # top 20 functions
+    print(stream.getvalue())
+    return result
+
+
+# Example: profile a data processing pipeline
+def process_data():
+    import json
+    data = [{"id": i, "value": i ** 2} for i in range(100_000)]
+    serialized = json.dumps(data)
+    parsed = json.loads(serialized)
+    filtered = [d for d in parsed if d["value"] > 50_000]
+    return sorted(filtered, key=lambda x: x["value"], reverse=True)[:100]
+
+profile_it(process_data)</code></pre>
+
+<pre><code># From command line:
+python -m cProfile -s cumulative my_script.py
+
+# Save profile for later analysis:
+python -m cProfile -o profile.prof my_script.py
+
+# Visualize with snakeviz (pip install snakeviz):
+snakeviz profile.prof</code></pre>
+
+            <h3>line_profiler — line-by-line timing</h3>
+
+<pre><code># pip install line_profiler
+
+# Add @profile decorator to functions you want to profile
+@profile
+def slow_function(n):
+    total = 0
+    for i in range(n):            # How much time here?
+        total += i ** 2            # vs here?
+    result = [x for x in range(n) if x % 2 == 0]  # vs here?
+    return total, result
+
+# Run with:
+# kernprof -l -v my_script.py
+
+# Output shows time per line:
+# Line #  Hits    Time    Per Hit  % Time  Line Contents
+# =====================================================
+#     4   1       0.0     0.0      0.0     total = 0
+#     5   100001  12.3    0.0     15.2     for i in range(n):
+#     6   100000  55.7    0.0     68.8     total += i ** 2
+#     7   1       12.9   12.9     15.9     result = [...]</code></pre>
+
+            <h3>memory_profiler — track memory usage</h3>
+
+<pre><code># pip install memory_profiler
+
+from memory_profiler import profile as mem_profile
+
+@mem_profile
+def memory_heavy():
+    a = [i for i in range(1_000_000)]        # ~8MB
+    b = {i: i ** 2 for i in range(1_000_000)} # ~80MB
+    del a                                      # free ~8MB
+    c = list(b.values())                       # ~8MB
+    return len(c)
+
+# Run: python -m memory_profiler my_script.py
+# Shows memory usage per line with increments</code></pre>
+
+            <h2>Step 2: Data Structures — Pick the Right One</h2>
+
+            <p>The #1 performance fix is usually choosing the right data structure. Here's when each one wins:</p>
+
+            <table>
+                <tr><th>Operation</th><th>list</th><th>set</th><th>dict</th><th>deque</th></tr>
+                <tr><td>Lookup (<span class="inline-code">x in</span>)</td><td>O(n) ❌</td><td>O(1) ✅</td><td>O(1) ✅</td><td>O(n)</td></tr>
+                <tr><td>Append</td><td>O(1) ✅</td><td>O(1)</td><td>O(1)</td><td>O(1) ✅</td></tr>
+                <tr><td>Prepend</td><td>O(n) ❌</td><td>—</td><td>—</td><td>O(1) ✅</td></tr>
+                <tr><td>Pop from end</td><td>O(1)</td><td>—</td><td>—</td><td>O(1)</td></tr>
+                <tr><td>Pop from start</td><td>O(n) ❌</td><td>—</td><td>—</td><td>O(1) ✅</td></tr>
+                <tr><td>Insert middle</td><td>O(n)</td><td>—</td><td>—</td><td>O(n)</td></tr>
+                <tr><td>Sort</td><td>O(n log n)</td><td>—</td><td>—</td><td>—</td></tr>
+            </table>
+
+<pre><code># ❌ SLOW: checking membership in a list
+users_list = list(range(1_000_000))
+if 999_999 in users_list:  # O(n) — scans entire list
+    pass
+
+# ✅ FAST: checking membership in a set
+users_set = set(range(1_000_000))
+if 999_999 in users_set:  # O(1) — hash lookup
+    pass
+
+# Benchmark: set lookup is ~100,000x faster for 1M items</code></pre>
+
+<pre><code>from collections import deque
+
+# ❌ SLOW: using list as a queue
+queue = []
+for i in range(100_000):
+    queue.insert(0, i)  # O(n) each time — shifts all elements
+
+# ✅ FAST: using deque as a queue
+queue = deque()
+for i in range(100_000):
+    queue.appendleft(i)  # O(1) each time
+
+# deque is ~1000x faster for this pattern</code></pre>
+
+            <h3>__slots__ — reduce memory per object</h3>
+
+<pre><code># Without __slots__: each instance has a __dict__ (~200 bytes overhead)
+class PointRegular:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+# With __slots__: no __dict__, ~64 bytes per instance
+class PointSlotted:
+    __slots__ = ('x', 'y', 'z')
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+# For 1M points: ~200MB vs ~64MB
+# Use __slots__ when you have many instances of the same class
+
+import sys
+regular = PointRegular(1, 2, 3)
+slotted = PointSlotted(1, 2, 3)
+print(f"Regular: {sys.getsizeof(regular.__dict__) + sys.getsizeof(regular)} bytes")
+print(f"Slotted: {sys.getsizeof(slotted)} bytes")</code></pre>
+
+            <h2>Step 3: Python-Specific Optimizations</h2>
+
+            <h3>Generators instead of lists</h3>
+
+<pre><code># ❌ Creates entire list in memory (40MB for 10M ints)
+squares = [x ** 2 for x in range(10_000_000)]
+total = sum(squares)
+
+# ✅ Generator — processes one item at a time (near-zero memory)
+squares = (x ** 2 for x in range(10_000_000))
+total = sum(squares)
+
+# Same result, ~40MB less memory</code></pre>
+
+            <h3>String concatenation</h3>
+
+<pre><code>import time
+
+# ❌ SLOW: string concatenation in loop
+def concat_slow(n):
+    result = ""
+    for i in range(n):
+        result += f"item_{i},"  # Creates new string each time
+    return result
+
+# ✅ FAST: join a list
+def concat_fast(n):
+    parts = [f"item_{i}" for i in range(n)]
+    return ",".join(parts)
+
+# Benchmark with n=100,000:
+# concat_slow: ~0.8s
+# concat_fast: ~0.05s (16x faster)</code></pre>
+
+            <h3>Local variables are faster than globals</h3>
+
+<pre><code># Python looks up local variables ~20% faster than globals
+import math
+
+# ❌ Slower: global lookup on each iteration
+def compute_slow(data):
+    return [math.sqrt(x) for x in data]
+
+# ✅ Faster: localize the function reference
+def compute_fast(data):
+    sqrt = math.sqrt  # Local reference
+    return [sqrt(x) for x in data]
+
+# Difference is small per call, but adds up in tight loops</code></pre>
+
+            <h3>Use built-in functions</h3>
+
+<pre><code># Built-ins are implemented in C — always faster than Python loops
+
+data = list(range(1_000_000))
+
+# ❌ Python loop
+total = 0
+for x in data:
+    total += x
+
+# ✅ Built-in sum() — 5-10x faster
+total = sum(data)
+
+# ❌ Python loop for max
+max_val = data[0]
+for x in data:
+    if x > max_val:
+        max_val = x
+
+# ✅ Built-in max() — 5-10x faster
+max_val = max(data)
+
+# Same applies to: min(), any(), all(), sorted(), map(), filter()</code></pre>
+
+            <h2>Step 4: NumPy Vectorization</h2>
+
+            <p>For numerical work, NumPy is 10-100x faster than pure Python. It operates on entire arrays in C.</p>
+
+<pre><code>import numpy as np
+
+# ❌ Pure Python: ~2.5 seconds
+def distances_python(points1, points2):
+    result = []
+    for p1, p2 in zip(points1, points2):
+        d = sum((a - b) ** 2 for a, b in zip(p1, p2)) ** 0.5
+        result.append(d)
+    return result
+
+# ✅ NumPy vectorized: ~0.02 seconds (125x faster)
+def distances_numpy(points1, points2):
+    p1 = np.array(points1)
+    p2 = np.array(points2)
+    return np.sqrt(np.sum((p1 - p2) ** 2, axis=1))
+
+# Generate test data
+n = 1_000_000
+pts1 = [(i, i+1, i+2) for i in range(n)]
+pts2 = [(i+3, i+4, i+5) for i in range(n)]</code></pre>
+
+<pre><code># Common NumPy speedups:
+
+# ❌ Python loop to filter
+filtered = [x for x in data if x > threshold]
+
+# ✅ NumPy boolean indexing
+arr = np.array(data)
+filtered = arr[arr > threshold]  # 50x faster
+
+# ❌ Python loop for statistics
+mean = sum(data) / len(data)
+std = (sum((x - mean) ** 2 for x in data) / len(data)) ** 0.5
+
+# ✅ NumPy
+mean = np.mean(arr)
+std = np.std(arr)  # 20x faster
+
+# ❌ Element-wise operations
+result = [a * b + c for a, b, c in zip(x, y, z)]
+
+# ✅ Vectorized
+result = x * y + z  # 100x faster</code></pre>
+
+            <div class="tip">
+                <strong>💡 When to use NumPy:</strong> Numerical arrays of the same type. NOT for mixed-type data, string processing, or irregular data structures — use pandas or pure Python for those.
+            </div>
+
+            <h2>Step 5: Caching</h2>
+
+<pre><code>from functools import lru_cache, cache
+import time
+
+# @cache (Python 3.9+) — unbounded cache
+@cache
+def fibonacci(n: int) -> int:
+    if n < 2:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+# Without cache: fibonacci(35) takes ~3 seconds
+# With cache: fibonacci(35) takes ~0.00001 seconds
+
+# @lru_cache — bounded cache with eviction
+@lru_cache(maxsize=1024)
+def expensive_query(user_id: int, date: str) -> dict:
+    """Simulates a slow database query."""
+    time.sleep(0.1)  # DB latency
+    return {"user_id": user_id, "date": date, "data": "..."}
+
+# First call: 100ms. Subsequent calls with same args: instant.
+# Cache info:
+print(expensive_query.cache_info())
+# CacheInfo(hits=42, misses=10, maxsize=1024, currsize=10)</code></pre>
+
+<pre><code># TTL cache (time-based expiration)
+import time
+from functools import wraps
+
+def ttl_cache(seconds: int = 300):
+    """Cache with time-to-live expiration."""
+    def decorator(fn):
+        _cache = {}
+
+        @wraps(fn)
+        def wrapper(*args):
+            now = time.time()
+            if args in _cache:
+                result, timestamp = _cache[args]
+                if now - timestamp < seconds:
+                    return result
+
+            result = fn(*args)
+            _cache[args] = (result, now)
+            return result
+
+        wrapper.clear = _cache.clear
+        wrapper.cache = _cache
+        return wrapper
+    return decorator
+
+@ttl_cache(seconds=60)
+def get_exchange_rate(currency: str) -> float:
+    """Fetches rate from API, cached for 60s."""
+    import requests
+    resp = requests.get(f"https://api.example.com/rates/{currency}")
+    return resp.json()["rate"]</code></pre>
+
+            <h2>Step 6: Concurrency for I/O</h2>
+
+            <p>If your code is slow because of network/disk I/O, not CPU — use async or threading. See our <a href="async-python-guide.html">async programming guide</a> and <a href="python-concurrency.html">concurrency guide</a> for deeper coverage.</p>
+
+<pre><code>import asyncio
+import aiohttp
+import time
+
+
+# ❌ Sequential: 10 API calls × 200ms = 2 seconds
+def fetch_sequential(urls):
+    import requests
+    return [requests.get(url).json() for url in urls]
+
+
+# ✅ Async concurrent: 10 API calls in ~200ms total
+async def fetch_concurrent(urls):
+    async with aiohttp.ClientSession() as session:
+        tasks = [session.get(url) for url in urls]
+        responses = await asyncio.gather(*tasks)
+        return [await r.json() for r in responses]
+
+
+# ✅ With concurrency limit (don't DDoS the API)
+async def fetch_limited(urls, max_concurrent=5):
+    semaphore = asyncio.Semaphore(max_concurrent)
+
+    async def fetch_one(session, url):
+        async with semaphore:
+            async with session.get(url) as resp:
+                return await resp.json()
+
+    async with aiohttp.ClientSession() as session:
+        return await asyncio.gather(
+            *[fetch_one(session, url) for url in urls]
+        )</code></pre>
+
+            <h2>Step 7: When Python Isn't Enough</h2>
+
+            <h3>Cython — compile Python to C</h3>
+
+<pre><code># primes.pyx (Cython file)
+def find_primes_cy(int limit):
+    """Find primes up to limit — Cython version."""
+    cdef int i, j
+    cdef bint is_prime
+    cdef list result = []
+
+    for i in range(2, limit):
+        is_prime = True
+        for j in range(2, int(i ** 0.5) + 1):
+            if i % j == 0:
+                is_prime = False
+                break
+        if is_prime:
+            result.append(i)
+    return result
+
+# Compile: cythonize -i primes.pyx
+# Usage: from primes import find_primes_cy
+# ~30x faster than pure Python for this algorithm</code></pre>
+
+            <h3>multiprocessing — use all CPU cores</h3>
+
+<pre><code>from multiprocessing import Pool
+import os
+
+
+def cpu_heavy_task(data_chunk):
+    """CPU-intensive work that benefits from parallelism."""
+    return sum(x ** 2 for x in data_chunk)
+
+
+def parallel_process(data, n_workers=None):
+    n_workers = n_workers or os.cpu_count()
+    chunk_size = len(data) // n_workers
+    chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+
+    with Pool(n_workers) as pool:
+        results = pool.map(cpu_heavy_task, chunks)
+
+    return sum(results)
+
+
+# Sequential: ~4 seconds (1 core)
+# Parallel with 4 cores: ~1.1 seconds (3.6x speedup)
+data = list(range(10_000_000))
+result = parallel_process(data)</code></pre>
+
+            <h2>Optimization Checklist</h2>
+
+            <ol>
+                <li><strong>Profile first</strong> — find the actual bottleneck with cProfile or line_profiler</li>
+                <li><strong>Right data structure</strong> — set for lookups, deque for queues, dict for key-value</li>
+                <li><strong>Built-in functions</strong> — sum, max, sorted, map are C-speed</li>
+                <li><strong>Generators</strong> — for large datasets, process items lazily</li>
+                <li><strong>Caching</strong> — @lru_cache for pure functions with repeated calls</li>
+                <li><strong>NumPy</strong> — vectorize numerical operations</li>
+                <li><strong>Async I/O</strong> — concurrent network/disk operations</li>
+                <li><strong>multiprocessing</strong> — use all CPU cores for CPU-bound work</li>
+                <li><strong>Cython/C extensions</strong> — last resort for hot loops</li>
+                <li><strong>Better algorithm</strong> — O(n log n) beats optimized O(n²) every time</li>
+            </ol>
+
+            <div class="tip">
+                <strong>🔑 Remember:</strong> The best optimization is often algorithmic. A hashmap lookup (O(1)) will always beat a faster linear scan (O(n)). Think about complexity before reaching for Cython.
+            </div>
+
+            <div class="cta">
+                <p>🚀 Want optimized Python scripts, automation tools, and performance templates?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="async-python-guide.html">Python Async Programming</a> — speed up I/O-bound code with asyncio</li>
+                <li><a href="python-concurrency.html">Python Concurrency</a> — threading, multiprocessing, and async compared</li>
+                <li><a href="data-pipeline-python.html">Build a Data Pipeline in Python</a> — optimized ETL patterns</li>
+                <li><a href="python-logging-monitoring.html">Python Logging & Monitoring</a> — track performance in production</li>
+                <li><a href="testing-python.html">Python Testing Guide</a> — benchmark tests with pytest-benchmark</li>
+            </ul>
+
+            <p>Need help optimizing a slow Python application? I profile, tune, and rebuild performance-critical code. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
