@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Environment Variables & Configuration — Manage Secrets Like a Pro (2026)</title>
+    <meta name="description" content="Complete guide to managing environment variables, secrets, and configuration in Python. dotenv, Pydantic Settings, 12-factor app, secret managers, multi-environment setups, and production security patterns.">
+    <meta name="keywords" content="python environment variables, python dotenv, pydantic settings, python config, python secrets management, 12 factor app python, python configuration best practices">
+    <meta property="og:title" content="Python Environment Variables & Configuration — Manage Secrets Like a Pro (2026)">
+    <meta property="og:description" content="Stop hardcoding secrets. Learn proper configuration management in Python with dotenv, Pydantic Settings, and secret managers.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-env-config.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-env-config.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Environment Variables & Configuration — Manage Secrets Like a Pro</h1>
+            <p class="meta">March 2026 · 18 min read · Python, DevOps, Security</p>
+
+            <p>Hardcoded secrets in source code are the #1 security mistake in Python projects. API keys in <span class="inline-code">config.py</span>, database passwords in <span class="inline-code">settings.py</span>, tokens pushed to GitHub — we've all seen it (or done it). This guide covers every level of configuration management, from basic <span class="inline-code">os.environ</span> to production secret managers.</p>
+
+            <h2>The 12-Factor App Approach</h2>
+
+            <p>The <a href="https://12factor.net/config">12-factor methodology</a> says: store config in environment variables. Why?</p>
+
+            <ul>
+                <li><strong>Separation</strong> — config varies between environments (dev/staging/prod), code doesn't</li>
+                <li><strong>Security</strong> — env vars never end up in version control</li>
+                <li><strong>Portability</strong> — same Docker image runs anywhere, config comes from the environment</li>
+                <li><strong>Simplicity</strong> — no config file format wars (YAML vs TOML vs JSON vs INI)</li>
+            </ul>
+
+            <h2>Level 1: os.environ (stdlib)</h2>
+
+            <p>Python's built-in approach. No dependencies, works everywhere.</p>
+
+<pre><code>import os
+
+# Read with default
+database_url = os.environ.get("DATABASE_URL", "sqlite:///local.db")
+debug = os.environ.get("DEBUG", "false").lower() == "true"
+port = int(os.environ.get("PORT", "8000"))
+
+# Read required (raises KeyError if missing)
+api_key = os.environ["API_KEY"]
+
+# Safer: check and fail with a clear message
+def require_env(name: str) -> str:
+    """Get required env var or raise with helpful message."""
+    value = os.environ.get(name)
+    if not value:
+        raise RuntimeError(
+            f"Required environment variable '{name}' is not set. "
+            f"Add it to your .env file or export it."
+        )
+    return value
+
+secret_key = require_env("SECRET_KEY")
+stripe_key = require_env("STRIPE_SECRET_KEY")</code></pre>
+
+            <div class="tip">
+                <strong>⚠️ Common gotcha:</strong> <span class="inline-code">os.environ.get("DEBUG", False)</span> returns the <em>string</em> <span class="inline-code">"False"</span>, which is truthy! Always compare strings explicitly or use a proper parsing library.
+            </div>
+
+            <h2>Level 2: python-dotenv</h2>
+
+            <p>Load <span class="inline-code">.env</span> files into environment variables. The de facto standard for local development.</p>
+
+<pre><code># Install
+pip install python-dotenv</code></pre>
+
+            <h3>.env file</h3>
+
+<pre><code># .env — NEVER commit this file!
+DATABASE_URL=postgresql://user:pass@localhost:5432/mydb
+SECRET_KEY=your-secret-key-here
+DEBUG=true
+REDIS_URL=redis://localhost:6379/0
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=alerts@example.com
+SMTP_PASSWORD=app-password-here
+ALLOWED_HOSTS=localhost,127.0.0.1,example.com</code></pre>
+
+            <h3>Loading in Python</h3>
+
+<pre><code>from dotenv import load_dotenv
+import os
+
+# Load .env file (looks in current directory and parents)
+load_dotenv()
+
+# Now os.environ has .env values
+db_url = os.environ.get("DATABASE_URL")
+debug = os.environ.get("DEBUG", "false").lower() == "true"
+
+# Override existing env vars (useful for testing)
+load_dotenv(override=True)
+
+# Load a specific file
+load_dotenv(".env.staging")
+
+# Get values directly (without modifying os.environ)
+from dotenv import dotenv_values
+config = dotenv_values(".env")
+print(config["DATABASE_URL"])</code></pre>
+
+            <h3>.gitignore (critical!)</h3>
+
+<pre><code># .gitignore
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets/</code></pre>
+
+            <h3>.env.example (commit this)</h3>
+
+<pre><code># .env.example — Template for developers
+# Copy to .env and fill in real values
+DATABASE_URL=postgresql://user:password@localhost:5432/dbname
+SECRET_KEY=generate-with-openssl-rand-hex-32
+DEBUG=true
+REDIS_URL=redis://localhost:6379/0</code></pre>
+
+            <h2>Level 3: Pydantic Settings (Recommended)</h2>
+
+            <p>Type-safe, validated configuration with automatic env var loading. This is what you should use in any serious project, especially with <a href="fastapi-rest-api.html">FastAPI</a>.</p>
+
+<pre><code># Install
+pip install pydantic-settings</code></pre>
+
+<pre><code># app/config.py
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator
+from functools import lru_cache
+
+
+class Settings(BaseSettings):
+    """Application settings — loaded from env vars automatically."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,       # DATABASE_URL or database_url both work
+        extra="ignore",             # Ignore unknown env vars
+    )
+
+    # Database
+    database_url: str = "sqlite:///./local.db"
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
+
+    # Security
+    secret_key: str
+    allowed_hosts: list[str] = ["localhost"]
+    cors_origins: list[str] = ["http://localhost:3000"]
+
+    # App
+    debug: bool = False
+    log_level: str = "INFO"
+    port: int = 8000
+
+    # External services
+    redis_url: str = "redis://localhost:6379/0"
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+
+    # API keys (optional)
+    stripe_secret_key: str = ""
+    openai_api_key: str = ""
+
+    @field_validator("log_level")
+    @classmethod
+    def validate_log_level(cls, v: str) -> str:
+        valid = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        if v.upper() not in valid:
+            raise ValueError(f"Invalid log level: {v}. Must be one of {valid}")
+        return v.upper()
+
+    @field_validator("allowed_hosts", "cors_origins", mode="before")
+    @classmethod
+    def split_comma_list(cls, v):
+        if isinstance(v, str):
+            return [h.strip() for h in v.split(",")]
+        return v
+
+    @property
+    def is_production(self) -> bool:
+        return not self.debug
+
+    @property
+    def smtp_configured(self) -> bool:
+        return bool(self.smtp_host and self.smtp_user)
+
+
+# Singleton: parse env once, reuse everywhere
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+# Usage:
+# from app.config import get_settings
+# settings = get_settings()
+# print(settings.database_url)
+# print(settings.is_production)</code></pre>
+
+            <div class="tip">
+                <strong>💡 Why Pydantic Settings?</strong>
+                <ul>
+                    <li>Auto-validates types — <span class="inline-code">PORT=abc</span> raises a clear error, not a runtime crash</li>
+                    <li>Lists from comma strings — <span class="inline-code">ALLOWED_HOSTS=a.com,b.com</span> becomes <span class="inline-code">["a.com", "b.com"]</span></li>
+                    <li>Nested models — group related config with prefixes</li>
+                    <li>Works with FastAPI's dependency injection out of the box</li>
+                </ul>
+            </div>
+
+            <h3>Use with FastAPI</h3>
+
+<pre><code>from fastapi import FastAPI, Depends
+from app.config import Settings, get_settings
+
+app = FastAPI()
+
+
+@app.get("/info")
+def info(settings: Settings = Depends(get_settings)):
+    return {
+        "debug": settings.debug,
+        "version": "1.0.0",
+        "smtp_configured": settings.smtp_configured,
+    }</code></pre>
+
+            <h3>Multi-environment setup</h3>
+
+<pre><code># Directory structure
+project/
+├── .env                 # Local dev (gitignored)
+├── .env.example         # Template (committed)
+├── .env.test            # Test overrides
+├── config/
+│   ├── .env.staging     # Staging (gitignored or encrypted)
+│   └── .env.production  # Production (gitignored or encrypted)
+└── app/
+    └── config.py</code></pre>
+
+<pre><code># Load the right file based on APP_ENV
+import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=f".env.{os.getenv('APP_ENV', 'development')}",
+        env_file_encoding="utf-8",
+    )
+    # ... fields ...</code></pre>
+
+            <h2>Level 4: Secret Managers (Production)</h2>
+
+            <p>For production deployments, env vars in <span class="inline-code">.env</span> files aren't enough. Use a proper secret manager.</p>
+
+            <h3>AWS Secrets Manager</h3>
+
+<pre><code>import json
+import boto3
+from functools import lru_cache
+
+
+@lru_cache
+def get_secret(secret_name: str, region: str = "us-east-1") -> dict:
+    """Fetch secret from AWS Secrets Manager (cached)."""
+    client = boto3.client("secretsmanager", region_name=region)
+    response = client.get_secret_value(SecretId=secret_name)
+    return json.loads(response["SecretString"])
+
+
+# Usage
+db_creds = get_secret("prod/database")
+db_url = f"postgresql://{db_creds['username']}:{db_creds['password']}@{db_creds['host']}/{db_creds['dbname']}"</code></pre>
+
+            <h3>HashiCorp Vault</h3>
+
+<pre><code>import hvac
+
+
+def get_vault_secret(path: str, key: str) -> str:
+    """Fetch secret from HashiCorp Vault."""
+    client = hvac.Client(
+        url=os.environ["VAULT_ADDR"],
+        token=os.environ["VAULT_TOKEN"],
+    )
+    secret = client.secrets.kv.v2.read_secret_version(path=path)
+    return secret["data"]["data"][key]
+
+
+# Usage
+api_key = get_vault_secret("myapp/stripe", "secret_key")</code></pre>
+
+            <h3>SOPS (encrypted files in git)</h3>
+
+<pre><code># Encrypt secrets file with Mozilla SOPS
+# Install: brew install sops
+
+# Encrypt (uses AWS KMS, GCP KMS, or PGP)
+sops --encrypt --in-place secrets.yaml
+
+# Decrypt in Python
+import subprocess
+import yaml
+
+def load_sops_file(path: str) -> dict:
+    """Decrypt SOPS-encrypted file and parse YAML."""
+    result = subprocess.run(
+        ["sops", "--decrypt", path],
+        capture_output=True, text=True, check=True,
+    )
+    return yaml.safe_load(result.stdout)
+
+secrets = load_sops_file("secrets.yaml")
+db_password = secrets["database"]["password"]</code></pre>
+
+            <h2>Level 5: Docker & Kubernetes</h2>
+
+            <h3>Docker Compose</h3>
+
+<pre><code># docker-compose.yml
+services:
+  app:
+    build: .
+    env_file:
+      - .env                    # Base config
+      - .env.${APP_ENV:-dev}    # Environment-specific overrides
+    environment:
+      - DATABASE_URL            # Pass through from host
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}  # Fail if missing</code></pre>
+
+            <h3>Kubernetes Secrets</h3>
+
+<pre><code># k8s/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: myapp-secrets
+type: Opaque
+stringData:
+  DATABASE_URL: postgresql://user:pass@db:5432/myapp
+  SECRET_KEY: your-production-secret
+
+---
+# k8s/deployment.yaml (excerpt)
+spec:
+  containers:
+    - name: app
+      envFrom:
+        - secretRef:
+            name: myapp-secrets
+        - configMapRef:
+            name: myapp-config</code></pre>
+
+            <p>For Docker deployment details, see our <a href="docker-python-deployment.html">Docker guide</a>.</p>
+
+            <h2>Configuration Anti-Patterns</h2>
+
+            <table>
+                <tr><th>❌ Don't</th><th>✅ Do</th></tr>
+                <tr><td>Hardcode secrets in code</td><td>Use env vars or secret manager</td></tr>
+                <tr><td>Commit <span class="inline-code">.env</span> to git</td><td>Commit <span class="inline-code">.env.example</span>, gitignore <span class="inline-code">.env</span></td></tr>
+                <tr><td>Use string booleans without parsing</td><td>Use Pydantic Settings for type safety</td></tr>
+                <tr><td>Load config at import time</td><td>Use <span class="inline-code">@lru_cache</span> function</td></tr>
+                <tr><td>Different config systems per service</td><td>Standardize on one approach</td></tr>
+                <tr><td>Put secrets in Docker images</td><td>Inject at runtime via env or mounts</td></tr>
+                <tr><td>Log config values at startup</td><td>Log config <em>keys</em>, mask values</td></tr>
+                <tr><td>Share secrets across environments</td><td>Unique secrets per environment</td></tr>
+            </table>
+
+            <h2>Safe Config Logging</h2>
+
+<pre><code>import re
+
+
+def mask_secret(value: str, visible: int = 4) -> str:
+    """Mask a secret value, showing only last N chars."""
+    if len(value) <= visible:
+        return "****"
+    return "*" * (len(value) - visible) + value[-visible:]
+
+
+def log_config(settings: dict, sensitive_keys: set[str] = None) -> dict:
+    """Create a safe-to-log version of config."""
+    sensitive = sensitive_keys or {
+        "password", "secret", "token", "key", "api_key",
+        "private", "credential", "auth",
+    }
+    safe = {}
+    for k, v in settings.items():
+        if any(s in k.lower() for s in sensitive):
+            safe[k] = mask_secret(str(v)) if v else "(not set)"
+        else:
+            safe[k] = v
+    return safe
+
+
+# Usage
+import logging
+logger = logging.getLogger(__name__)
+
+config = {
+    "database_url": "postgresql://user:pass@localhost/db",
+    "secret_key": "super-secret-value-123",
+    "debug": True,
+    "stripe_api_key": "sk_live_abc123xyz",
+}
+
+safe_config = log_config(config)
+logger.info(f"Config loaded: {safe_config}")
+# Config loaded: {
+#   'database_url': 'postgresql://user:pass@localhost/db',
+#   'secret_key': '*********************123',
+#   'debug': True,
+#   'stripe_api_key': '***************xyz'
+# }</code></pre>
+
+            <h2>Complete Example: Multi-Environment App</h2>
+
+<pre><code># app/config.py — Production-ready configuration
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator, SecretStr
+from functools import lru_cache
+from enum import Enum
+import os
+
+
+class Environment(str, Enum):
+    development = "development"
+    staging = "staging"
+    production = "production"
+    testing = "testing"
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=f".env.{os.getenv('APP_ENV', 'development')}",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    # App
+    app_env: Environment = Environment.development
+    app_name: str = "MyApp"
+    debug: bool = False
+    port: int = 8000
+    log_level: str = "INFO"
+
+    # Database
+    database_url: str
+    db_pool_size: int = Field(5, ge=1, le=50)
+    db_echo: bool = False  # Log SQL queries
+
+    # Security — use SecretStr to prevent accidental logging
+    secret_key: SecretStr
+    api_key: SecretStr = SecretStr("")
+
+    # Redis
+    redis_url: str = "redis://localhost:6379/0"
+    cache_ttl: int = 300  # seconds
+
+    # Email
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: SecretStr = SecretStr("")
+
+    @field_validator("log_level")
+    @classmethod
+    def validate_log_level(cls, v):
+        valid = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        upper = v.upper()
+        if upper not in valid:
+            raise ValueError(f"Invalid log level: {v}")
+        return upper
+
+    @property
+    def is_production(self) -> bool:
+        return self.app_env == Environment.production
+
+    @property
+    def is_testing(self) -> bool:
+        return self.app_env == Environment.testing
+
+
+@lru_cache
+def get_settings() -> Settings:
+    """Cached settings singleton."""
+    settings = Settings()
+
+    # Validate production requirements
+    if settings.is_production:
+        assert not settings.debug, "DEBUG must be False in production"
+        assert "sqlite" not in settings.database_url, "Use PostgreSQL in production"
+        assert settings.secret_key.get_secret_value() != "dev-secret", "Change SECRET_KEY in production"
+
+    return settings</code></pre>
+
+            <div class="cta">
+                <p>🚀 Get 50+ production-ready Python scripts with proper configuration patterns built in.</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI</a> — uses Pydantic Settings for config</li>
+                <li><a href="docker-python-deployment.html">Dockerize Python Apps</a> — env vars in Docker and Compose</li>
+                <li><a href="python-logging-monitoring.html">Python Logging & Monitoring</a> — log config safely</li>
+                <li><a href="testing-python.html">Python Testing Guide</a> — test configs with overrides</li>
+                <li><a href="design-patterns-python.html">Python Design Patterns</a> — Singleton pattern for config</li>
+            </ul>
+
+            <p>Need help setting up secure configuration for your Python project? I build APIs, automation tools, and infrastructure scripts. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
