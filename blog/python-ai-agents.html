@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build AI Agents with Python — LangChain, Tool Use & Autonomous Workflows (2026)</title>
+    <meta name="description" content="Complete guide to building AI agents in Python. LangChain agents, custom tool use, ReAct pattern, memory systems, multi-agent orchestration, and production deployment. Real code, not toy demos.">
+    <meta name="keywords" content="python ai agent, langchain agent, tool use llm, react agent python, ai agent tutorial, autonomous agent python, multi-agent python, langchain tools, openai function calling">
+    <meta property="og:title" content="Build AI Agents with Python — LangChain, Tool Use & Autonomous Workflows (2026)">
+    <meta property="og:description" content="Build production AI agents: tool use, memory, multi-agent orchestration. From simple ReAct to autonomous workflows.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-ai-agents.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-ai-agents.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Build AI Agents with Python — LangChain, Tool Use & Autonomous Workflows</h1>
+            <p class="meta">March 2026 · 24 min read · Python, AI, LangChain, Agents</p>
+
+            <p>AI agents are programs that use LLMs to reason, make decisions, and take actions autonomously. Unlike simple chatbots that generate text, agents can search the web, query databases, execute code, and chain multiple steps together to accomplish complex goals.</p>
+
+            <p>This guide takes you from a basic ReAct agent to production multi-agent systems — with real Python code, not toy demos.</p>
+
+            <h2>What Makes an Agent?</h2>
+
+            <p>An agent has three core components:</p>
+
+            <ul>
+                <li><strong>LLM (Brain)</strong> — reasons about what to do next</li>
+                <li><strong>Tools</strong> — functions the agent can call (search, calculate, read files, call APIs)</li>
+                <li><strong>Memory</strong> — context from previous steps and conversations</li>
+            </ul>
+
+            <p>The agent loop: <strong>Observe → Think → Act → Observe → Think → Act...</strong> until the goal is achieved or it decides to stop.</p>
+
+            <h2>Setup</h2>
+
+<pre><code>pip install langchain langchain-openai langchain-community
+pip install duckduckgo-search wikipedia
+pip install python-dotenv</code></pre>
+
+<pre><code># .env
+OPENAI_API_KEY=sk-...
+# Or use any LangChain-supported provider:
+# ANTHROPIC_API_KEY=sk-ant-...
+# GOOGLE_API_KEY=...</code></pre>
+
+            <h2>1. Simple ReAct Agent</h2>
+
+            <p>ReAct (Reason + Act) is the foundational agent pattern. The LLM thinks step by step, decides which tool to use, observes the result, and repeats.</p>
+
+<pre><code>from langchain_openai import ChatOpenAI
+from langchain.agents import create_react_agent, AgentExecutor
+from langchain.tools import Tool
+from langchain import hub
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# --- Define tools ---
+def search_web(query: str) -> str:
+    """Search the web for current information."""
+    from duckduckgo_search import DDGS
+    with DDGS() as ddgs:
+        results = list(ddgs.text(query, max_results=3))
+    if not results:
+        return "No results found."
+    return "\n".join(
+        f"- {r['title']}: {r['body'][:200]}"
+        for r in results
+    )
+
+
+def calculate(expression: str) -> str:
+    """Evaluate a mathematical expression safely."""
+    allowed = set("0123456789+-*/.() ")
+    if not all(c in allowed for c in expression):
+        return "Error: only basic math operations allowed"
+    try:
+        result = eval(expression)  # Safe: filtered input
+        return str(result)
+    except Exception as e:
+        return f"Error: {e}"
+
+
+tools = [
+    Tool(name="Search", func=search_web,
+         description="Search the web for current information. Input: search query string."),
+    Tool(name="Calculator", func=calculate,
+         description="Calculate math expressions. Input: mathematical expression like '2 + 2' or '(100 * 0.15) / 3'."),
+]
+
+# --- Create agent ---
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
+prompt = hub.pull("hwchase17/react")
+
+agent = create_react_agent(llm, tools, prompt)
+executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True,
+    max_iterations=5,
+    handle_parsing_errors=True,
+)
+
+# --- Run ---
+result = executor.invoke({
+    "input": "What's the current population of Argentina, "
+             "and what's 15% of that number?"
+})
+print(result["output"])</code></pre>
+
+            <div class="tip">
+                <strong>💡 What happens under the hood:</strong>
+                <ol>
+                    <li>LLM receives the question + available tools</li>
+                    <li>LLM decides: "I should search for Argentina's population"</li>
+                    <li>Agent calls <span class="inline-code">Search("Argentina population 2026")</span></li>
+                    <li>LLM sees result: ~47 million</li>
+                    <li>LLM decides: "Now I need to calculate 15% of 47,000,000"</li>
+                    <li>Agent calls <span class="inline-code">Calculator("47000000 * 0.15")</span></li>
+                    <li>LLM composes final answer</li>
+                </ol>
+            </div>
+
+            <h2>2. Custom Tools (The Real Power)</h2>
+
+            <p>Pre-built tools are fine for demos. Real agents need custom tools that connect to your systems.</p>
+
+<pre><code>from langchain.tools import tool
+from pydantic import BaseModel, Field
+import httpx
+import json
+
+
+# --- Structured input with Pydantic ---
+class DatabaseQuery(BaseModel):
+    """Input for database queries."""
+    table: str = Field(description="Table name to query")
+    conditions: str = Field(description="WHERE clause conditions")
+    limit: int = Field(default=10, description="Max rows to return")
+
+
+@tool(args_schema=DatabaseQuery)
+def query_database(table: str, conditions: str, limit: int = 10) -> str:
+    """Query the application database. Returns JSON results.
+    Use for looking up users, orders, products, etc."""
+    import sqlite3
+    conn = sqlite3.connect("app.db")
+    conn.row_factory = sqlite3.Row
+    try:
+        query = f"SELECT * FROM {table} WHERE {conditions} LIMIT {limit}"
+        rows = conn.execute(query).fetchall()
+        return json.dumps([dict(r) for r in rows], default=str)
+    except Exception as e:
+        return f"Query error: {e}"
+    finally:
+        conn.close()
+
+
+@tool
+def send_notification(channel: str, message: str) -> str:
+    """Send a notification to Slack or email.
+    channel: 'slack' or 'email'
+    message: the notification text"""
+    if channel == "slack":
+        # In production: use actual Slack API
+        print(f"📨 Slack: {message}")
+        return "Notification sent to Slack"
+    elif channel == "email":
+        print(f"📧 Email: {message}")
+        return "Email sent"
+    return f"Unknown channel: {channel}"
+
+
+@tool
+def read_file(filepath: str) -> str:
+    """Read contents of a local file. Use for configs, logs, data files."""
+    from pathlib import Path
+    path = Path(filepath)
+    if not path.exists():
+        return f"File not found: {filepath}"
+    if path.stat().st_size > 50_000:
+        return f"File too large ({path.stat().st_size} bytes). Read first 5000 chars."
+    return path.read_text()[:5000]
+
+
+@tool
+def call_api(url: str, method: str = "GET") -> str:
+    """Make an HTTP API call. Returns response body (first 2000 chars).
+    url: full URL to call
+    method: GET or POST"""
+    try:
+        with httpx.Client(timeout=10) as client:
+            if method.upper() == "POST":
+                resp = client.post(url)
+            else:
+                resp = client.get(url)
+            return f"Status: {resp.status_code}\n{resp.text[:2000]}"
+    except Exception as e:
+        return f"API error: {e}"</code></pre>
+
+            <h2>3. OpenAI Function Calling (Structured)</h2>
+
+            <p>For more reliable tool use, OpenAI's function calling forces the LLM to output structured JSON instead of free-text tool invocations.</p>
+
+<pre><code>from langchain_openai import ChatOpenAI
+from langchain.agents import create_openai_functions_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+# System prompt defines the agent's personality and constraints
+prompt = ChatPromptTemplate.from_messages([
+    ("system", """You are a helpful data analyst assistant.
+You have access to tools for querying databases, reading files, and making calculations.
+
+Rules:
+- Always verify data before making claims
+- Show your reasoning
+- If you're unsure, say so
+- Never execute destructive operations"""),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
+
+agent = create_openai_functions_agent(llm, tools, prompt)
+executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True,
+    max_iterations=10,
+    return_intermediate_steps=True,  # See the agent's reasoning
+)</code></pre>
+
+            <h2>4. Memory — Agents That Remember</h2>
+
+<pre><code>from langchain.memory import ConversationBufferWindowMemory
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+# Keep last 10 exchanges
+memory = ConversationBufferWindowMemory(
+    k=10,
+    memory_key="chat_history",
+    return_messages=True,
+)
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant with access to tools."),
+    MessagesPlaceholder(variable_name="chat_history"),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+agent = create_openai_functions_agent(llm, tools, prompt)
+executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    memory=memory,
+    verbose=True,
+)
+
+# Conversation with memory
+executor.invoke({"input": "Search for the latest Python release"})
+executor.invoke({"input": "What new features does it have?"})  # Remembers context
+executor.invoke({"input": "Compare that to the previous version"})  # Still has context</code></pre>
+
+            <h3>Long-term memory with vector store</h3>
+
+<pre><code>from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
+
+
+class AgentMemory:
+    """Long-term memory backed by a vector store."""
+
+    def __init__(self):
+        self.embeddings = OpenAIEmbeddings()
+        self.store = FAISS.from_texts(
+            ["Agent initialized"],
+            self.embeddings,
+        )
+
+    def remember(self, text: str, metadata: dict = None):
+        """Store a memory."""
+        self.store.add_texts([text], metadatas=[metadata or {}])
+
+    def recall(self, query: str, k: int = 3) -> list[str]:
+        """Retrieve relevant memories."""
+        docs = self.store.similarity_search(query, k=k)
+        return [doc.page_content for doc in docs]
+
+
+# Use as a tool
+agent_memory = AgentMemory()
+
+@tool
+def save_memory(text: str) -> str:
+    """Save important information to long-term memory for later recall."""
+    agent_memory.remember(text)
+    return f"Saved to memory: {text[:100]}..."
+
+@tool
+def search_memory(query: str) -> str:
+    """Search long-term memory for relevant past information."""
+    results = agent_memory.recall(query)
+    if not results:
+        return "No relevant memories found."
+    return "\n".join(f"- {r}" for r in results)</code></pre>
+
+            <h2>5. Build an Agent from Scratch (No Framework)</h2>
+
+            <p>Understanding the loop helps you debug and customize. Here's a minimal agent in ~80 lines:</p>
+
+<pre><code>import json
+import openai
+
+client = openai.OpenAI()
+
+TOOLS_SPEC = [
+    {
+        "type": "function",
+        "function": {
+            "name": "search_web",
+            "description": "Search the web for information",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"}
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "calculate",
+            "description": "Evaluate a math expression",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "expression": {"type": "string", "description": "Math expression"}
+                },
+                "required": ["expression"],
+            },
+        },
+    },
+]
+
+TOOL_FUNCTIONS = {
+    "search_web": search_web,  # Defined earlier
+    "calculate": calculate,
+}
+
+
+def run_agent(user_message: str, max_steps: int = 10) -> str:
+    """Minimal agent loop with OpenAI function calling."""
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant. Use tools when needed."},
+        {"role": "user", "content": user_message},
+    ]
+
+    for step in range(max_steps):
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            tools=TOOLS_SPEC,
+            tool_choice="auto",
+        )
+
+        msg = response.choices[0].message
+        messages.append(msg)
+
+        # No tool calls → agent is done
+        if not msg.tool_calls:
+            return msg.content
+
+        # Execute each tool call
+        for tool_call in msg.tool_calls:
+            fn_name = tool_call.function.name
+            fn_args = json.loads(tool_call.function.arguments)
+
+            print(f"  🔧 {fn_name}({fn_args})")
+
+            # Call the actual function
+            fn = TOOL_FUNCTIONS.get(fn_name)
+            if fn:
+                result = fn(**fn_args)
+            else:
+                result = f"Unknown tool: {fn_name}"
+
+            # Feed result back to the LLM
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": str(result),
+            })
+
+    return "Agent reached max steps without completing."
+
+
+# Usage
+answer = run_agent("What's the GDP of Brazil divided by its population?")
+print(answer)</code></pre>
+
+            <div class="tip">
+                <strong>🎯 Why build from scratch?</strong> LangChain is great for prototyping, but production agents often need custom control flow — retry logic, cost tracking, human-in-the-loop approvals, custom error handling. Understanding the raw loop lets you add these without fighting the framework.
+            </div>
+
+            <h2>6. Multi-Agent Systems</h2>
+
+            <p>Complex tasks benefit from multiple specialized agents working together.</p>
+
+<pre><code>class SpecializedAgent:
+    """An agent with a specific role and toolset."""
+
+    def __init__(self, name: str, role: str, tools: list):
+        self.name = name
+        self.role = role
+        self.tools = tools
+        self.llm = ChatOpenAI(model="gpt-4o", temperature=0)
+
+    def run(self, task: str, context: str = "") -> str:
+        prompt = f"""You are {self.name}, a {self.role}.
+Context from other agents: {context}
+
+Task: {task}
+
+Use your tools to complete this task. Be thorough and specific."""
+
+        # (Use the agent loop from above)
+        executor = AgentExecutor(
+            agent=create_openai_functions_agent(
+                self.llm, self.tools,
+                ChatPromptTemplate.from_messages([
+                    ("system", prompt),
+                    ("human", "{input}"),
+                    MessagesPlaceholder(variable_name="agent_scratchpad"),
+                ])
+            ),
+            tools=self.tools,
+            max_iterations=8,
+        )
+        result = executor.invoke({"input": task})
+        return result["output"]
+
+
+class Orchestrator:
+    """Coordinates multiple agents to solve complex problems."""
+
+    def __init__(self):
+        self.researcher = SpecializedAgent(
+            "Researcher", "research specialist",
+            tools=[search_tool, read_file_tool],
+        )
+        self.analyst = SpecializedAgent(
+            "Analyst", "data analyst",
+            tools=[calculate_tool, query_db_tool],
+        )
+        self.writer = SpecializedAgent(
+            "Writer", "technical writer",
+            tools=[read_file_tool],
+        )
+
+    def solve(self, task: str) -> str:
+        # Step 1: Research
+        research = self.researcher.run(
+            f"Research this topic thoroughly: {task}"
+        )
+
+        # Step 2: Analyze
+        analysis = self.analyst.run(
+            f"Analyze this data and find insights: {task}",
+            context=research,
+        )
+
+        # Step 3: Write report
+        report = self.writer.run(
+            f"Write a clear, actionable report on: {task}",
+            context=f"Research: {research}\nAnalysis: {analysis}",
+        )
+
+        return report
+
+
+# Usage
+orchestrator = Orchestrator()
+report = orchestrator.solve(
+    "Compare Python web frameworks for a startup building a SaaS API"
+)
+print(report)</code></pre>
+
+            <h2>7. Production Patterns</h2>
+
+            <h3>Rate limiting and cost control</h3>
+
+<pre><code>import time
+from functools import wraps
+
+
+class AgentBudget:
+    """Track and limit agent costs."""
+
+    def __init__(self, max_cost: float = 1.0, max_calls: int = 50):
+        self.max_cost = max_cost
+        self.max_calls = max_calls
+        self.total_cost = 0.0
+        self.total_calls = 0
+
+    def track(self, input_tokens: int, output_tokens: int, model: str = "gpt-4o"):
+        # Approximate pricing (update with current rates)
+        rates = {
+            "gpt-4o": (0.0025, 0.01),      # per 1K tokens
+            "gpt-4o-mini": (0.00015, 0.0006),
+        }
+        input_rate, output_rate = rates.get(model, (0.01, 0.03))
+        cost = (input_tokens / 1000 * input_rate) + (output_tokens / 1000 * output_rate)
+        self.total_cost += cost
+        self.total_calls += 1
+
+        if self.total_cost > self.max_cost:
+            raise BudgetExceeded(f"Cost ${self.total_cost:.4f} exceeds limit ${self.max_cost}")
+        if self.total_calls > self.max_calls:
+            raise BudgetExceeded(f"{self.total_calls} calls exceeds limit {self.max_calls}")
+
+    @property
+    def summary(self):
+        return f"${self.total_cost:.4f} / {self.total_calls} calls"
+
+
+class BudgetExceeded(Exception):
+    pass</code></pre>
+
+            <h3>Human-in-the-loop</h3>
+
+<pre><code>class SafeAgentExecutor:
+    """Agent that asks for human approval on sensitive actions."""
+
+    SENSITIVE_TOOLS = {"send_notification", "query_database", "call_api"}
+
+    def __init__(self, executor: AgentExecutor, auto_approve: bool = False):
+        self.executor = executor
+        self.auto_approve = auto_approve
+
+    def run(self, input_text: str) -> str:
+        # Wrap tools with approval check
+        for tool in self.executor.tools:
+            if tool.name in self.SENSITIVE_TOOLS:
+                original_fn = tool.func
+                tool.func = self._wrap_with_approval(tool.name, original_fn)
+
+        return self.executor.invoke({"input": input_text})["output"]
+
+    def _wrap_with_approval(self, name, fn):
+        def wrapper(*args, **kwargs):
+            if self.auto_approve:
+                return fn(*args, **kwargs)
+
+            print(f"\n⚠️  Agent wants to use: {name}")
+            print(f"   Args: {args} {kwargs}")
+            response = input("   Approve? [y/n]: ").strip().lower()
+
+            if response == "y":
+                return fn(*args, **kwargs)
+            return "Action denied by human operator."
+
+        return wrapper</code></pre>
+
+            <h3>Structured output</h3>
+
+<pre><code>from pydantic import BaseModel
+
+
+class ResearchReport(BaseModel):
+    """Structured output from research agent."""
+    title: str
+    summary: str
+    key_findings: list[str]
+    recommendations: list[str]
+    confidence: float  # 0-1
+    sources: list[str]
+
+
+# Force structured output
+llm_structured = llm.with_structured_output(ResearchReport)
+report = llm_structured.invoke(
+    "Research the best Python testing frameworks in 2026"
+)
+print(report.model_dump_json(indent=2))</code></pre>
+
+            <h2>Architecture Comparison</h2>
+
+            <table>
+                <tr><th>Approach</th><th>Best For</th><th>Complexity</th></tr>
+                <tr><td>Simple ReAct</td><td>Q&A with tools, single-step tasks</td><td>Low</td></tr>
+                <tr><td>Function calling</td><td>Reliable tool use, structured I/O</td><td>Low-Medium</td></tr>
+                <tr><td>Custom loop</td><td>Full control, production systems</td><td>Medium</td></tr>
+                <tr><td>Multi-agent</td><td>Complex workflows, specialized roles</td><td>High</td></tr>
+                <tr><td>LangGraph</td><td>Stateful workflows, cycles, branching</td><td>High</td></tr>
+            </table>
+
+            <div class="cta">
+                <p>🚀 Want production-ready agent templates, tool libraries, and automation scripts?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="rag-pipeline-python.html">Build a RAG Pipeline in Python</a> — give agents access to your documents</li>
+                <li><a href="async-python-guide.html">Python Async Programming</a> — async agents for parallel tool execution</li>
+                <li><a href="api-integration-python.html">Automate API Integrations</a> — build tools that connect to any API</li>
+                <li><a href="design-patterns-python.html">Python Design Patterns</a> — Strategy and Observer patterns in agents</li>
+                <li><a href="python-env-config.html">Python Environment & Config Management</a> — manage API keys safely</li>
+                <li><a href="machine-learning-python.html">Machine Learning with Python</a> — ML models as agent tools</li>
+            </ul>
+
+            <p>Need help building AI agents for your workflow? I build autonomous Python systems, data pipelines, and AI integrations. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
