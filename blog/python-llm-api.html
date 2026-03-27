@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python + LLM APIs — Build AI-Powered Applications (2026 Guide)</title>
+    <meta name="description" content="Complete guide to integrating LLM APIs in Python. OpenAI, Anthropic Claude, and Google Gemini — with streaming, function calling, structured outputs, cost tracking, retries, and production patterns.">
+    <meta name="keywords" content="openai api python, anthropic claude api, gemini api python, llm python, chatgpt api, function calling, structured output, ai python tutorial, llm integration">
+    <meta property="og:title" content="Python + LLM APIs — Build AI-Powered Applications (2026 Guide)">
+    <meta property="og:description" content="Integrate OpenAI, Claude, and Gemini APIs in Python. Streaming, function calling, structured outputs, cost tracking — production code.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-llm-api.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-llm-api.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python + LLM APIs — Build AI-Powered Applications</h1>
+            <p class="meta">March 2026 · 24 min read · Python, OpenAI, Anthropic, Gemini, LLM</p>
+
+            <p>Every major LLM provider has a Python SDK. But going from "hello world" to production requires handling streaming, retries, cost tracking, structured outputs, and function calling. This guide covers all three major APIs — OpenAI, Anthropic Claude, and Google Gemini — with patterns you can ship today.</p>
+
+            <h2>Setup — All Three Providers</h2>
+
+<pre><code># Install SDKs
+pip install openai anthropic google-genai
+
+# Set API keys (use env vars, never hardcode)
+export OPENAI_API_KEY="sk-..."
+export ANTHROPIC_API_KEY="sk-ant-..."
+export GOOGLE_API_KEY="AI..."</code></pre>
+
+            <h3>Quick comparison</h3>
+
+            <table>
+                <tr><th>Feature</th><th>OpenAI</th><th>Anthropic</th><th>Gemini</th></tr>
+                <tr><td>Best model (Mar 2026)</td><td>GPT-4.1</td><td>Claude Opus 4</td><td>Gemini 2.5 Pro</td></tr>
+                <tr><td>Streaming</td><td>✅</td><td>✅</td><td>✅</td></tr>
+                <tr><td>Function calling</td><td>✅ (tools)</td><td>✅ (tools)</td><td>✅ (tools)</td></tr>
+                <tr><td>Structured output</td><td>✅ (JSON mode)</td><td>✅ (tool_use)</td><td>✅ (JSON mode)</td></tr>
+                <tr><td>Vision</td><td>✅</td><td>✅</td><td>✅</td></tr>
+                <tr><td>Context window</td><td>1M tokens</td><td>200K tokens</td><td>1M tokens</td></tr>
+            </table>
+
+            <h2>Basic Completions</h2>
+
+            <h3>OpenAI</h3>
+
+<pre><code>from openai import OpenAI
+
+client = OpenAI()  # reads OPENAI_API_KEY from env
+
+response = client.chat.completions.create(
+    model="gpt-4.1-mini",
+    messages=[
+        {"role": "system", "content": "You are a helpful coding assistant."},
+        {"role": "user", "content": "Write a Python function to merge two sorted lists."},
+    ],
+    temperature=0.3,
+    max_tokens=500,
+)
+
+print(response.choices[0].message.content)
+print(f"Tokens: {response.usage.prompt_tokens} in, {response.usage.completion_tokens} out")</code></pre>
+
+            <h3>Anthropic Claude</h3>
+
+<pre><code>import anthropic
+
+client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env
+
+message = client.messages.create(
+    model="claude-sonnet-4-5-20250514",
+    max_tokens=500,
+    system="You are a helpful coding assistant.",
+    messages=[
+        {"role": "user", "content": "Write a Python function to merge two sorted lists."},
+    ],
+)
+
+print(message.content[0].text)
+print(f"Tokens: {message.usage.input_tokens} in, {message.usage.output_tokens} out")</code></pre>
+
+            <h3>Google Gemini</h3>
+
+<pre><code>from google import genai
+
+client = genai.Client()  # reads GOOGLE_API_KEY from env
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Write a Python function to merge two sorted lists.",
+    config={
+        "system_instruction": "You are a helpful coding assistant.",
+        "temperature": 0.3,
+        "max_output_tokens": 500,
+    },
+)
+
+print(response.text)
+print(f"Tokens: {response.usage_metadata.prompt_token_count} in, "
+      f"{response.usage_metadata.candidates_token_count} out")</code></pre>
+
+            <h2>Streaming Responses</h2>
+
+            <p>For long responses, streaming gives users immediate feedback instead of waiting 5-10 seconds for the full response.</p>
+
+<pre><code># OpenAI streaming
+def stream_openai(prompt: str, model: str = "gpt-4.1-mini"):
+    client = OpenAI()
+    stream = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        stream=True,
+    )
+
+    full_response = []
+    for chunk in stream:
+        delta = chunk.choices[0].delta.content
+        if delta:
+            print(delta, end="", flush=True)
+            full_response.append(delta)
+
+    print()  # newline
+    return "".join(full_response)
+
+
+# Anthropic streaming
+def stream_claude(prompt: str, model: str = "claude-sonnet-4-5-20250514"):
+    client = anthropic.Anthropic()
+
+    full_response = []
+    with client.messages.stream(
+        model=model,
+        max_tokens=1024,
+        messages=[{"role": "user", "content": prompt}],
+    ) as stream:
+        for text in stream.text_stream:
+            print(text, end="", flush=True)
+            full_response.append(text)
+
+    print()
+    return "".join(full_response)
+
+
+# Gemini streaming
+def stream_gemini(prompt: str, model: str = "gemini-2.5-flash"):
+    client = genai.Client()
+
+    full_response = []
+    for chunk in client.models.generate_content_stream(
+        model=model,
+        contents=prompt,
+    ):
+        if chunk.text:
+            print(chunk.text, end="", flush=True)
+            full_response.append(chunk.text)
+
+    print()
+    return "".join(full_response)</code></pre>
+
+            <h2>Function Calling (Tool Use)</h2>
+
+            <p>Let the LLM decide when to call your Python functions. This is the foundation for <a href="python-ai-agents.html">AI agents</a>.</p>
+
+<pre><code>import json
+import httpx
+
+# Define tools the LLM can call
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get current weather for a city",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "City name"},
+                    "units": {
+                        "type": "string",
+                        "enum": ["celsius", "fahrenheit"],
+                        "default": "celsius",
+                    },
+                },
+                "required": ["city"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_web",
+            "description": "Search the web for information",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"},
+                },
+                "required": ["query"],
+            },
+        },
+    },
+]
+
+
+# Implement the actual functions
+def get_weather(city: str, units: str = "celsius") -> dict:
+    resp = httpx.get(f"https://wttr.in/{city}?format=j1", timeout=10)
+    data = resp.json()
+    temp = data["current_condition"][0]
+    return {
+        "city": city,
+        "temperature": temp["temp_C"] if units == "celsius" else temp["temp_F"],
+        "units": units,
+        "description": temp["weatherDesc"][0]["value"],
+        "humidity": temp["humidity"],
+    }
+
+def search_web(query: str) -> dict:
+    return {"results": [f"Result for: {query}"], "source": "mock"}
+
+
+TOOL_MAP = {
+    "get_weather": get_weather,
+    "search_web": search_web,
+}
+
+
+# Full conversation loop with tool use
+def chat_with_tools(user_message: str) -> str:
+    client = OpenAI()
+    messages = [{"role": "user", "content": user_message}]
+
+    while True:
+        response = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=messages,
+            tools=tools,
+        )
+
+        choice = response.choices[0]
+
+        # If no tool calls, return the text response
+        if not choice.message.tool_calls:
+            return choice.message.content
+
+        # Execute each tool call
+        messages.append(choice.message)
+
+        for tool_call in choice.message.tool_calls:
+            fn_name = tool_call.function.name
+            fn_args = json.loads(tool_call.function.arguments)
+
+            print(f"🔧 Calling {fn_name}({fn_args})")
+            result = TOOL_MAP[fn_name](**fn_args)
+
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": json.dumps(result),
+            })
+
+        # Loop back — LLM will process tool results
+
+
+# Usage
+answer = chat_with_tools("What's the weather in Buenos Aires and Tokyo?")
+print(answer)
+# 🔧 Calling get_weather({'city': 'Buenos Aires'})
+# 🔧 Calling get_weather({'city': 'Tokyo'})
+# "Buenos Aires is 24°C and partly cloudy. Tokyo is 15°C and clear."</code></pre>
+
+            <div class="tip">
+                <strong>💡 Claude tool use:</strong> Anthropic uses the same concept but with <span class="inline-code">tool_use</span> content blocks instead of <span class="inline-code">tool_calls</span>. The pattern is identical — define tools, let the model call them, return results.
+            </div>
+
+            <h2>Structured Outputs</h2>
+
+            <p>Force the LLM to return valid JSON matching your Pydantic schema. No more parsing free text.</p>
+
+<pre><code>from pydantic import BaseModel, Field
+from openai import OpenAI
+
+
+class ExtractedContact(BaseModel):
+    name: str
+    email: str | None = None
+    phone: str | None = None
+    company: str | None = None
+    role: str | None = None
+
+
+class ExtractionResult(BaseModel):
+    contacts: list[ExtractedContact]
+    summary: str = Field(description="Brief summary of the text")
+
+
+def extract_contacts(text: str) -> ExtractionResult:
+    """Extract structured contact info from unstructured text."""
+    client = OpenAI()
+
+    response = client.beta.chat.completions.parse(
+        model="gpt-4.1-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "Extract all contact information from the text.",
+            },
+            {"role": "user", "content": text},
+        ],
+        response_format=ExtractionResult,
+    )
+
+    return response.choices[0].message.parsed
+
+
+# Usage
+result = extract_contacts("""
+Hi, I'm Sarah Chen from TechCorp (VP of Engineering).
+Reach me at sarah@techcorp.io or 555-0123.
+Also CC my colleague Bob (bob@techcorp.io).
+""")
+
+for c in result.contacts:
+    print(f"{c.name} — {c.email} ({c.role} at {c.company})")
+# Sarah Chen — sarah@techcorp.io (VP of Engineering at TechCorp)
+# Bob — bob@techcorp.io (None at TechCorp)</code></pre>
+
+            <h3>Structured output with Claude</h3>
+
+<pre><code>import anthropic
+import json
+
+
+def extract_with_claude(text: str) -> dict:
+    """Claude structured output via tool_use pattern."""
+    client = anthropic.Anthropic()
+
+    response = client.messages.create(
+        model="claude-sonnet-4-5-20250514",
+        max_tokens=1024,
+        tools=[{
+            "name": "extract_contacts",
+            "description": "Return extracted contact information",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "contacts": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "email": {"type": "string"},
+                                "phone": {"type": "string"},
+                                "company": {"type": "string"},
+                            },
+                            "required": ["name"],
+                        },
+                    },
+                },
+                "required": ["contacts"],
+            },
+        }],
+        tool_choice={"type": "tool", "name": "extract_contacts"},
+        messages=[{"role": "user", "content": f"Extract contacts from: {text}"}],
+    )
+
+    # Find the tool_use block
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input
+
+    return {"contacts": []}</code></pre>
+
+            <h2>Multi-Provider Wrapper</h2>
+
+            <p>Don't lock into one provider. Build an abstraction that lets you switch models with one parameter.</p>
+
+<pre><code>from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+
+@dataclass
+class LLMResponse:
+    content: str
+    model: str
+    input_tokens: int
+    output_tokens: int
+    cost: float  # USD
+
+
+class LLMProvider(ABC):
+    @abstractmethod
+    def complete(self, messages: list[dict], **kwargs) -> LLMResponse:
+        ...
+
+
+class OpenAIProvider(LLMProvider):
+    PRICING = {  # per 1M tokens (input, output)
+        "gpt-4.1": (2.00, 8.00),
+        "gpt-4.1-mini": (0.40, 1.60),
+        "gpt-4.1-nano": (0.10, 0.40),
+    }
+
+    def __init__(self, model: str = "gpt-4.1-mini"):
+        self.model = model
+        self.client = OpenAI()
+
+    def complete(self, messages, **kwargs) -> LLMResponse:
+        resp = self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            **kwargs,
+        )
+        usage = resp.usage
+        prices = self.PRICING.get(self.model, (0, 0))
+        cost = (usage.prompt_tokens * prices[0] + usage.completion_tokens * prices[1]) / 1_000_000
+
+        return LLMResponse(
+            content=resp.choices[0].message.content,
+            model=self.model,
+            input_tokens=usage.prompt_tokens,
+            output_tokens=usage.completion_tokens,
+            cost=cost,
+        )
+
+
+class AnthropicProvider(LLMProvider):
+    PRICING = {
+        "claude-sonnet-4-5-20250514": (3.00, 15.00),
+        "claude-haiku-3-5-20241022": (0.80, 4.00),
+    }
+
+    def __init__(self, model: str = "claude-sonnet-4-5-20250514"):
+        self.model = model
+        self.client = anthropic.Anthropic()
+
+    def complete(self, messages, **kwargs) -> LLMResponse:
+        system = None
+        filtered = []
+        for m in messages:
+            if m["role"] == "system":
+                system = m["content"]
+            else:
+                filtered.append(m)
+
+        resp = self.client.messages.create(
+            model=self.model,
+            max_tokens=kwargs.get("max_tokens", 1024),
+            system=system or "",
+            messages=filtered,
+        )
+        usage = resp.usage
+        prices = self.PRICING.get(self.model, (0, 0))
+        cost = (usage.input_tokens * prices[0] + usage.output_tokens * prices[1]) / 1_000_000
+
+        return LLMResponse(
+            content=resp.content[0].text,
+            model=self.model,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
+            cost=cost,
+        )
+
+
+# --- Factory ---
+def get_llm(provider: str = "openai", model: str = None) -> LLMProvider:
+    providers = {
+        "openai": lambda: OpenAIProvider(model or "gpt-4.1-mini"),
+        "anthropic": lambda: AnthropicProvider(model or "claude-sonnet-4-5-20250514"),
+    }
+    if provider not in providers:
+        raise ValueError(f"Unknown provider: {provider}")
+    return providers[provider]()
+
+
+# --- Usage: swap providers with one line ---
+llm = get_llm("anthropic")
+resp = llm.complete([
+    {"role": "system", "content": "Be concise."},
+    {"role": "user", "content": "What is FastAPI?"},
+])
+print(f"{resp.content[:100]}...")
+print(f"Cost: ${resp.cost:.6f} ({resp.input_tokens}+{resp.output_tokens} tokens)")</code></pre>
+
+            <h2>Cost Tracking & Budgets</h2>
+
+<pre><code>import json
+from pathlib import Path
+from datetime import datetime, timezone
+
+
+class CostTracker:
+    """Track LLM API costs per session/day/total."""
+
+    def __init__(self, budget_file: str = "llm_costs.json"):
+        self.file = Path(budget_file)
+        self.data = self._load()
+
+    def _load(self) -> dict:
+        if self.file.exists():
+            return json.loads(self.file.read_text())
+        return {"total": 0.0, "daily": {}, "by_model": {}}
+
+    def _save(self):
+        self.file.write_text(json.dumps(self.data, indent=2))
+
+    def record(self, response: LLMResponse):
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        self.data["total"] += response.cost
+        self.data["daily"][today] = self.data["daily"].get(today, 0) + response.cost
+        self.data["by_model"][response.model] = (
+            self.data["by_model"].get(response.model, 0) + response.cost
+        )
+        self._save()
+
+    def check_budget(self, daily_limit: float = 5.0) -> bool:
+        """Return True if within daily budget."""
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        spent = self.data["daily"].get(today, 0)
+        return spent < daily_limit
+
+    def report(self) -> str:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        return (
+            f"Today: ${self.data['daily'].get(today, 0):.4f}\n"
+            f"Total: ${self.data['total']:.4f}\n"
+            f"By model:\n" +
+            "\n".join(f"  {m}: ${c:.4f}" for m, c in self.data["by_model"].items())
+        )
+
+
+# Usage with provider
+tracker = CostTracker()
+llm = get_llm("openai")
+
+if not tracker.check_budget(daily_limit=5.0):
+    print("⚠️ Daily budget exceeded!")
+else:
+    resp = llm.complete([{"role": "user", "content": "Hello!"}])
+    tracker.record(resp)
+    print(tracker.report())</code></pre>
+
+            <h2>Retry & Error Handling</h2>
+
+<pre><code>import time
+import random
+from openai import (
+    RateLimitError,
+    APITimeoutError,
+    APIConnectionError,
+    InternalServerError,
+)
+
+
+RETRYABLE_ERRORS = (
+    RateLimitError,
+    APITimeoutError,
+    APIConnectionError,
+    InternalServerError,
+)
+
+
+def llm_call_with_retry(
+    fn,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+):
+    """Retry LLM API calls with exponential backoff + jitter."""
+    for attempt in range(max_retries + 1):
+        try:
+            return fn()
+        except RETRYABLE_ERRORS as e:
+            if attempt == max_retries:
+                raise
+
+            delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+
+            # Respect Retry-After header if present
+            if hasattr(e, "response") and e.response:
+                retry_after = e.response.headers.get("Retry-After")
+                if retry_after:
+                    delay = max(delay, float(retry_after))
+
+            print(f"⚠️ {type(e).__name__}: retrying in {delay:.1f}s "
+                  f"(attempt {attempt + 1}/{max_retries})")
+            time.sleep(delay)
+
+
+# Usage
+response = llm_call_with_retry(
+    lambda: client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[{"role": "user", "content": "Hello!"}],
+    )
+)</code></pre>
+
+            <h2>Conversation Memory</h2>
+
+<pre><code>class Conversation:
+    """Manage conversation history with token-aware truncation."""
+
+    def __init__(self, system_prompt: str = "", max_messages: int = 50):
+        self.system_prompt = system_prompt
+        self.max_messages = max_messages
+        self.messages: list[dict] = []
+
+    def add_user(self, content: str):
+        self.messages.append({"role": "user", "content": content})
+        self._truncate()
+
+    def add_assistant(self, content: str):
+        self.messages.append({"role": "assistant", "content": content})
+        self._truncate()
+
+    def _truncate(self):
+        """Keep only the last N messages (sliding window)."""
+        if len(self.messages) > self.max_messages:
+            self.messages = self.messages[-self.max_messages:]
+
+    def to_messages(self) -> list[dict]:
+        """Format for API call."""
+        result = []
+        if self.system_prompt:
+            result.append({"role": "system", "content": self.system_prompt})
+        result.extend(self.messages)
+        return result
+
+    def chat(self, user_input: str, llm: LLMProvider) -> str:
+        """Send message and get response, maintaining history."""
+        self.add_user(user_input)
+        response = llm.complete(self.to_messages())
+        self.add_assistant(response.content)
+        return response.content
+
+
+# Usage
+conv = Conversation(system_prompt="You are a Python tutor. Be concise.")
+llm = get_llm("openai")
+
+print(conv.chat("What's a decorator?", llm))
+print(conv.chat("Show me a simple example", llm))  # has context from first message
+print(conv.chat("Now make it accept arguments", llm))  # builds on both</code></pre>
+
+            <h2>Vision — Analyze Images</h2>
+
+<pre><code>import base64
+from pathlib import Path
+
+
+def analyze_image(image_path: str, question: str = "Describe this image.") -> str:
+    """Send an image to GPT-4 Vision for analysis."""
+    client = OpenAI()
+
+    # Read and encode image
+    image_data = Path(image_path).read_bytes()
+    b64_image = base64.b64encode(image_data).decode()
+    media_type = "image/png" if image_path.endswith(".png") else "image/jpeg"
+
+    response = client.chat.completions.create(
+        model="gpt-4.1",
+        messages=[{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": question},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:{media_type};base64,{b64_image}",
+                        "detail": "high",  # or "low" for cheaper analysis
+                    },
+                },
+            ],
+        }],
+        max_tokens=500,
+    )
+
+    return response.choices[0].message.content
+
+
+# Usage
+description = analyze_image("screenshot.png", "What errors do you see in this code?")
+print(description)</code></pre>
+
+            <h2>Production Patterns</h2>
+
+            <ul>
+                <li><strong>Always set timeouts</strong> — <span class="inline-code">timeout=30.0</span> on every API call</li>
+                <li><strong>Use streaming for UX</strong> — users hate staring at a spinner for 10 seconds</li>
+                <li><strong>Track costs obsessively</strong> — one bad loop can burn $100 in minutes</li>
+                <li><strong>Cache identical requests</strong> — hash (model + messages + params) → cache response</li>
+                <li><strong>Retry on 429/500/timeout</strong> — with exponential backoff and jitter</li>
+                <li><strong>Validate outputs</strong> — LLMs can return invalid JSON even in "JSON mode"</li>
+                <li><strong>Use the cheapest model that works</strong> — start with mini/flash, upgrade only if quality is insufficient</li>
+                <li><strong>Log everything</strong> — prompts, responses, latency, tokens, costs</li>
+                <li><strong>Set spending limits</strong> — daily budget caps prevent runaway costs</li>
+                <li><strong>Multi-provider fallback</strong> — if OpenAI is down, fall back to Claude or Gemini</li>
+            </ul>
+
+            <div class="cta">
+                <p>🚀 Want production-ready LLM wrappers, AI tools, and automation scripts?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="python-ai-agents.html">Build AI Agents in Python</a> — from API calls to autonomous agents</li>
+                <li><a href="rag-pipeline-python.html">Build a RAG Pipeline in Python</a> — combine LLMs with your own data</li>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI</a> — serve your LLM app as an API</li>
+                <li><a href="async-python-guide.html">Python Async Programming</a> — async LLM calls for high throughput</li>
+                <li><a href="python-error-handling.html">Python Error Handling</a> — robust error handling for API calls</li>
+                <li><a href="python-env-config.html">Python Environment & Config Management</a> — manage API keys securely</li>
+            </ul>
+
+            <p>Need help building an AI-powered application? I build LLM integrations, AI agents, and automation tools in Python. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
