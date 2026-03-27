@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Regular Expressions — Complete Guide with Examples (2026)</title>
+    <meta name="description" content="Master Python regular expressions: re module, pattern syntax, groups, lookaheads, named captures, common patterns for emails, URLs, logs, and data extraction. Practical examples you can copy-paste.">
+    <meta name="keywords" content="python regex, regular expressions python, re module, python pattern matching, regex tutorial, python regex examples, findall, sub, match, search python">
+    <meta property="og:title" content="Python Regular Expressions — Complete Guide with Examples (2026)">
+    <meta property="og:description" content="Master regex in Python: from basics to advanced patterns. Real-world examples for data extraction, validation, and text processing.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-regex-guide.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-regex-guide.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Regular Expressions — Complete Guide with Examples</h1>
+            <p class="meta">March 2026 · 18 min read · Python, Regex, Text Processing</p>
+
+            <p>Regular expressions are the Swiss army knife of text processing. They're ugly, powerful, and once you learn them, you'll use them everywhere — log parsing, data validation, web scraping, text cleanup. This guide covers Python's <span class="inline-code">re</span> module from basics to advanced patterns, with real examples you can actually use.</p>
+
+            <h2>The Basics: re Module Functions</h2>
+
+<pre><code>import re
+
+text = "Order #12345 was placed on 2026-03-15 for $299.99"
+
+# re.search — find first match anywhere in string
+match = re.search(r"#(\d+)", text)
+if match:
+    print(match.group())   # "#12345"
+    print(match.group(1))  # "12345" (captured group)
+
+# re.match — match only at the START of string
+match = re.match(r"Order", text)       # ✅ matches
+match = re.match(r"placed", text)      # ❌ None (not at start)
+
+# re.findall — find ALL matches, return list
+numbers = re.findall(r"\d+", text)
+print(numbers)  # ['12345', '2026', '03', '15', '299', '99']
+
+# re.findall with groups — returns captured groups only
+dates = re.findall(r"(\d{4})-(\d{2})-(\d{2})", text)
+print(dates)  # [('2026', '03', '15')]
+
+# re.sub — search and replace
+cleaned = re.sub(r"\$[\d.]+", "[PRICE]", text)
+print(cleaned)  # "Order #12345 was placed on 2026-03-15 for [PRICE]"
+
+# re.split — split by pattern
+parts = re.split(r"\s+", "hello   world   foo")
+print(parts)  # ['hello', 'world', 'foo']</code></pre>
+
+            <div class="tip">
+                <strong>💡 Always use raw strings:</strong> Write <span class="inline-code">r"\d+"</span>, not <span class="inline-code">"\\d+"</span>. The <span class="inline-code">r</span> prefix prevents Python from interpreting backslashes before regex sees them.
+            </div>
+
+            <h2>Pattern Syntax Cheat Sheet</h2>
+
+            <table>
+                <tr><th>Pattern</th><th>Matches</th><th>Example</th></tr>
+                <tr><td><span class="inline-code">.</span></td><td>Any character (except newline)</td><td><span class="inline-code">a.c</span> → "abc", "a1c"</td></tr>
+                <tr><td><span class="inline-code">\d</span></td><td>Digit [0-9]</td><td><span class="inline-code">\d{3}</span> → "123"</td></tr>
+                <tr><td><span class="inline-code">\w</span></td><td>Word char [a-zA-Z0-9_]</td><td><span class="inline-code">\w+</span> → "hello_42"</td></tr>
+                <tr><td><span class="inline-code">\s</span></td><td>Whitespace [ \t\n\r]</td><td><span class="inline-code">\s+</span> → "  \t"</td></tr>
+                <tr><td><span class="inline-code">\D, \W, \S</span></td><td>Negated versions</td><td><span class="inline-code">\D+</span> → "abc"</td></tr>
+                <tr><td><span class="inline-code">^</span></td><td>Start of string</td><td><span class="inline-code">^Hello</span></td></tr>
+                <tr><td><span class="inline-code">$</span></td><td>End of string</td><td><span class="inline-code">world$</span></td></tr>
+                <tr><td><span class="inline-code">*</span></td><td>0 or more</td><td><span class="inline-code">ab*c</span> → "ac", "abbc"</td></tr>
+                <tr><td><span class="inline-code">+</span></td><td>1 or more</td><td><span class="inline-code">ab+c</span> → "abc", "abbc"</td></tr>
+                <tr><td><span class="inline-code">?</span></td><td>0 or 1</td><td><span class="inline-code">colou?r</span> → "color", "colour"</td></tr>
+                <tr><td><span class="inline-code">{n,m}</span></td><td>Between n and m</td><td><span class="inline-code">\d{2,4}</span> → "12", "1234"</td></tr>
+                <tr><td><span class="inline-code">[abc]</span></td><td>Character class</td><td><span class="inline-code">[aeiou]</span> → vowels</td></tr>
+                <tr><td><span class="inline-code">[^abc]</span></td><td>Negated class</td><td><span class="inline-code">[^0-9]</span> → non-digits</td></tr>
+                <tr><td><span class="inline-code">a|b</span></td><td>Alternation (or)</td><td><span class="inline-code">cat|dog</span></td></tr>
+                <tr><td><span class="inline-code">(...)</span></td><td>Capture group</td><td><span class="inline-code">(\d{4})-(\d{2})</span></td></tr>
+                <tr><td><span class="inline-code">(?:...)</span></td><td>Non-capturing group</td><td><span class="inline-code">(?:cat|dog)s</span></td></tr>
+            </table>
+
+            <h2>Groups and Named Captures</h2>
+
+<pre><code>import re
+
+# --- Basic groups ---
+log = '2026-03-15 14:30:22 ERROR [auth] Login failed for user@example.com'
+
+match = re.search(
+    r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) (\w+) \[(\w+)\] (.+)",
+    log
+)
+if match:
+    date, time, level, module, message = match.groups()
+    print(f"Level: {level}, Module: {module}")
+    # Level: ERROR, Module: auth
+
+
+# --- Named groups (?P&lt;name&gt;...) — much more readable ---
+pattern = r"""
+    (?P&lt;date&gt;\d{4}-\d{2}-\d{2})\s+
+    (?P&lt;time&gt;\d{2}:\d{2}:\d{2})\s+
+    (?P&lt;level&gt;\w+)\s+
+    \[(?P&lt;module&gt;\w+)\]\s+
+    (?P&lt;message&gt;.+)
+"""
+
+match = re.search(pattern, log, re.VERBOSE)
+if match:
+    print(match.group("level"))    # "ERROR"
+    print(match.group("module"))   # "auth"
+    print(match.groupdict())
+    # {'date': '2026-03-15', 'time': '14:30:22', 'level': 'ERROR',
+    #  'module': 'auth', 'message': 'Login failed for user@example.com'}
+
+
+# --- Backreferences ---
+# Find repeated words
+text = "the the quick brown fox fox"
+dupes = re.findall(r"\b(\w+)\s+\1\b", text)
+print(dupes)  # ['the', 'fox']</code></pre>
+
+            <div class="tip">
+                <strong>💡 Use re.VERBOSE for complex patterns:</strong> The <span class="inline-code">re.VERBOSE</span> (or <span class="inline-code">re.X</span>) flag lets you add whitespace and comments inside patterns. Makes regex maintainable.
+            </div>
+
+            <h2>Lookaheads and Lookbehinds</h2>
+
+            <p>Zero-width assertions — they check what's around a match without including it in the result.</p>
+
+<pre><code>import re
+
+# --- Lookahead (?=...) — match only if followed by ---
+# Find numbers followed by "px"
+text = "width: 100px; height: 200em; margin: 10px"
+px_values = re.findall(r"\d+(?=px)", text)
+print(px_values)  # ['100', '10']
+
+# --- Negative lookahead (?!...) — match only if NOT followed by ---
+# Find numbers NOT followed by "px"
+non_px = re.findall(r"\d+(?!px)\b", text)
+print(non_px)  # ['200']
+
+# --- Lookbehind (?&lt;=...) — match only if preceded by ---
+# Extract price values after "$"
+prices = "Items: $29.99, €15.50, $149.00, £30"
+usd = re.findall(r"(?&lt;=\$)\d+\.\d{2}", prices)
+print(usd)  # ['29.99', '149.00']
+
+# --- Negative lookbehind (?&lt;!...) — match only if NOT preceded by ---
+# Find words not preceded by "@" (exclude mentions)
+text = "hello @world from python"
+words = re.findall(r"(?&lt;!@)\b\w+\b", text)
+print(words)  # ['hello', 'from', 'python']
+
+
+# --- Practical: password validation with lookaheads ---
+def validate_password(password: str) -> tuple[bool, list[str]]:
+    """Check password strength using lookaheads."""
+    errors = []
+    if len(password) < 8:
+        errors.append("At least 8 characters")
+    if not re.search(r"(?=.*[A-Z])", password):
+        errors.append("At least one uppercase letter")
+    if not re.search(r"(?=.*[a-z])", password):
+        errors.append("At least one lowercase letter")
+    if not re.search(r"(?=.*\d)", password):
+        errors.append("At least one digit")
+    if not re.search(r"(?=.*[!@#$%^&*])", password):
+        errors.append("At least one special character")
+    return len(errors) == 0, errors
+
+ok, issues = validate_password("Hello123!")
+print(ok, issues)  # True []
+
+ok, issues = validate_password("hello")
+print(ok, issues)  # False ['At least 8 characters', 'At least one uppercase letter', ...]</code></pre>
+
+            <h2>Compiled Patterns (Performance)</h2>
+
+<pre><code>import re
+
+# Compile once, use many times — 2-10x faster for repeated use
+EMAIL_RE = re.compile(
+    r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
+    re.IGNORECASE,
+)
+
+# Use the compiled pattern
+emails = [
+    "alice@example.com",
+    "not-an-email",
+    "bob@company.co.uk",
+    "bad@",
+]
+
+valid = [e for e in emails if EMAIL_RE.fullmatch(e)]
+print(valid)  # ['alice@example.com', 'bob@company.co.uk']
+
+
+# Compile with flags
+LOG_PATTERN = re.compile(r"""
+    ^(?P&lt;ip&gt;[\d.]+)\s+        # IP address
+    -\s+-\s+                     # Ident and auth (usually -)
+    \[(?P&lt;date&gt;[^\]]+)\]\s+   # Date in brackets
+    "(?P&lt;method&gt;\w+)\s+       # HTTP method
+     (?P&lt;path&gt;\S+)\s+         # Request path
+     HTTP/[\d.]+"               # HTTP version
+    \s+(?P&lt;status&gt;\d{3})       # Status code
+    \s+(?P&lt;size&gt;\d+)           # Response size
+""", re.VERBOSE)
+
+log_line = '192.168.1.1 - - [26/Mar/2026:14:30:22 +0000] "GET /api/users HTTP/1.1" 200 4523'
+match = LOG_PATTERN.match(log_line)
+if match:
+    print(match.groupdict())
+    # {'ip': '192.168.1.1', 'date': '26/Mar/2026:14:30:22 +0000',
+    #  'method': 'GET', 'path': '/api/users', 'status': '200', 'size': '4523'}</code></pre>
+
+            <h2>Practical Patterns You'll Actually Use</h2>
+
+            <h3>Extract data from structured text</h3>
+
+<pre><code>import re
+
+# --- Parse key-value pairs ---
+config_text = """
+host = localhost
+port = 5432
+database = myapp
+debug = true
+"""
+
+pairs = dict(re.findall(r"^(\w+)\s*=\s*(.+)$", config_text, re.MULTILINE))
+print(pairs)
+# {'host': 'localhost', 'port': '5432', 'database': 'myapp', 'debug': 'true'}
+
+
+# --- Extract URLs from text ---
+text = "Visit https://example.com or http://api.test.io/v2/data?key=123"
+urls = re.findall(r"https?://[^\s<>\"']+", text)
+print(urls)
+# ['https://example.com', 'http://api.test.io/v2/data?key=123']
+
+
+# --- Parse CSV-like data (handling quoted fields) ---
+line = 'John,"Smith, Jr.",42,"New York"'
+fields = re.findall(r'(?:"([^"]*)")|([^,]+)', line)
+values = [quoted or unquoted for quoted, unquoted in fields]
+print(values)  # ['John', 'Smith, Jr.', '42', 'New York']
+
+
+# --- Clean HTML tags ---
+html = "&lt;p&gt;Hello &lt;b&gt;world&lt;/b&gt;, this is &lt;a href='#'&gt;a link&lt;/a&gt;.&lt;/p&gt;"
+clean = re.sub(r"&lt;[^&gt;]+&gt;", "", html)
+print(clean)  # "Hello world, this is a link."</code></pre>
+
+            <h3>Data validation patterns</h3>
+
+<pre><code>import re
+
+PATTERNS = {
+    # Phone: international format
+    "phone": re.compile(r"^\+?1?\d{9,15}$"),
+
+    # IPv4 address
+    "ipv4": re.compile(
+        r"^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}"
+        r"(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$"
+    ),
+
+    # ISO date (YYYY-MM-DD)
+    "date": re.compile(r"^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$"),
+
+    # Hex color (#RGB or #RRGGBB)
+    "hex_color": re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$"),
+
+    # Slug (URL-safe string)
+    "slug": re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$"),
+
+    # Semantic version
+    "semver": re.compile(r"^\d+\.\d+\.\d+(?:-[\w.]+)?(?:\+[\w.]+)?$"),
+
+    # UUID v4
+    "uuid": re.compile(
+        r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+        re.IGNORECASE,
+    ),
+}
+
+
+def validate(value: str, pattern_name: str) -> bool:
+    pattern = PATTERNS.get(pattern_name)
+    if not pattern:
+        raise ValueError(f"Unknown pattern: {pattern_name}")
+    return bool(pattern.match(value))
+
+
+# Test
+assert validate("192.168.1.1", "ipv4")
+assert validate("2026-03-15", "date")
+assert validate("#ff6600", "hex_color")
+assert validate("hello-world-42", "slug")
+assert validate("2.1.0-beta.1", "semver")
+assert not validate("999.1.1.1", "ipv4")
+assert not validate("2026-13-01", "date")</code></pre>
+
+            <h3>Log parsing and data extraction</h3>
+
+<pre><code>import re
+from collections import Counter
+
+
+def parse_nginx_logs(log_text: str) -> list[dict]:
+    """Parse nginx access log into structured records."""
+    pattern = re.compile(
+        r'(?P&lt;ip&gt;[\d.]+)\s+'
+        r'- - '
+        r'\[(?P&lt;date&gt;[^\]]+)\]\s+'
+        r'"(?P&lt;method&gt;\w+)\s+(?P&lt;path&gt;\S+)\s+HTTP/[\d.]+"\s+'
+        r'(?P&lt;status&gt;\d{3})\s+'
+        r'(?P&lt;size&gt;\d+)\s+'
+        r'"(?P&lt;referrer&gt;[^"]*)"\s+'
+        r'"(?P&lt;user_agent&gt;[^"]*)"'
+    )
+
+    records = []
+    for line in log_text.strip().split("\n"):
+        match = pattern.match(line)
+        if match:
+            d = match.groupdict()
+            d["status"] = int(d["status"])
+            d["size"] = int(d["size"])
+            records.append(d)
+    return records
+
+
+def analyze_logs(records: list[dict]):
+    """Quick analysis of parsed logs."""
+    status_counts = Counter(r["status"] for r in records)
+    top_paths = Counter(r["path"] for r in records).most_common(10)
+    errors = [r for r in records if r["status"] >= 400]
+    total_bytes = sum(r["size"] for r in records)
+
+    return {
+        "total_requests": len(records),
+        "status_distribution": dict(status_counts),
+        "top_paths": top_paths,
+        "error_count": len(errors),
+        "total_bytes": total_bytes,
+    }</code></pre>
+
+            <h2>Advanced: re.sub with Functions</h2>
+
+<pre><code>import re
+
+# --- Replace with a function (dynamic replacements) ---
+def censor_emails(text: str) -> str:
+    """Replace email addresses with censored versions."""
+    def mask(match):
+        email = match.group()
+        user, domain = email.split("@")
+        return f"{user[0]}***@{domain}"
+
+    return re.sub(
+        r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
+        mask,
+        text,
+    )
+
+text = "Contact alice@example.com or bob.smith@company.co.uk"
+print(censor_emails(text))
+# "Contact a***@example.com or b***@company.co.uk"
+
+
+# --- Template substitution ---
+def expand_template(template: str, variables: dict) -> str:
+    """Replace {{variable}} placeholders."""
+    def replacer(match):
+        key = match.group(1).strip()
+        return str(variables.get(key, match.group()))
+
+    return re.sub(r"\{\{\s*(\w+)\s*\}\}", replacer, template)
+
+result = expand_template(
+    "Hello {{name}}, your order #{{order_id}} is {{status}}.",
+    {"name": "Alice", "order_id": "12345", "status": "shipped"},
+)
+print(result)  # "Hello Alice, your order #12345 is shipped."
+
+
+# --- Convert camelCase to snake_case ---
+def camel_to_snake(name: str) -> str:
+    # Insert _ before uppercase letters, then lowercase everything
+    s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+print(camel_to_snake("getUserById"))      # "get_user_by_id"
+print(camel_to_snake("HTTPSConnection"))   # "https_connection"
+print(camel_to_snake("parseJSON"))         # "parse_json"</code></pre>
+
+            <h2>Flags Reference</h2>
+
+            <table>
+                <tr><th>Flag</th><th>Short</th><th>Effect</th></tr>
+                <tr><td><span class="inline-code">re.IGNORECASE</span></td><td><span class="inline-code">re.I</span></td><td>Case-insensitive matching</td></tr>
+                <tr><td><span class="inline-code">re.MULTILINE</span></td><td><span class="inline-code">re.M</span></td><td><span class="inline-code">^</span> and <span class="inline-code">$</span> match line start/end</td></tr>
+                <tr><td><span class="inline-code">re.DOTALL</span></td><td><span class="inline-code">re.S</span></td><td><span class="inline-code">.</span> matches newlines too</td></tr>
+                <tr><td><span class="inline-code">re.VERBOSE</span></td><td><span class="inline-code">re.X</span></td><td>Allow whitespace and comments in pattern</td></tr>
+                <tr><td><span class="inline-code">re.ASCII</span></td><td><span class="inline-code">re.A</span></td><td><span class="inline-code">\w</span>, <span class="inline-code">\d</span> match ASCII only</td></tr>
+            </table>
+
+<pre><code># Combine flags with |
+pattern = re.compile(r"""
+    ^from:\s+       # Sender line
+    (.+)            # Capture sender name/email
+    $
+""", re.VERBOSE | re.IGNORECASE | re.MULTILINE)</code></pre>
+
+            <h2>Common Pitfalls</h2>
+
+            <ul>
+                <li><strong>Greedy vs lazy:</strong> <span class="inline-code">.*</span> is greedy (matches as much as possible). Use <span class="inline-code">.*?</span> for lazy (minimal) matching. Critical when extracting content between delimiters.</li>
+                <li><strong>Forgetting raw strings:</strong> <span class="inline-code">"\b"</span> is a backspace character, <span class="inline-code">r"\b"</span> is a word boundary. Always use <span class="inline-code">r""</span>.</li>
+                <li><strong>Catastrophic backtracking:</strong> Patterns like <span class="inline-code">(a+)+b</span> can hang on non-matching input. Avoid nested quantifiers.</li>
+                <li><strong>Using regex for HTML:</strong> Don't parse HTML with regex. Use BeautifulSoup or lxml. Regex is fine for simple tag stripping, not for DOM manipulation.</li>
+                <li><strong>fullmatch vs match vs search:</strong> <span class="inline-code">match()</span> matches at the start, <span class="inline-code">search()</span> matches anywhere, <span class="inline-code">fullmatch()</span> matches the entire string. Use <span class="inline-code">fullmatch()</span> for validation.</li>
+            </ul>
+
+<pre><code># Greedy vs lazy
+html = "&lt;b&gt;hello&lt;/b&gt; and &lt;b&gt;world&lt;/b&gt;"
+
+# Greedy — matches too much
+print(re.findall(r"&lt;b&gt;(.*)&lt;/b&gt;", html))
+# ['hello&lt;/b&gt; and &lt;b&gt;world']  ← wrong!
+
+# Lazy — matches correctly
+print(re.findall(r"&lt;b&gt;(.*?)&lt;/b&gt;", html))
+# ['hello', 'world']  ← correct!</code></pre>
+
+            <h2>When NOT to Use Regex</h2>
+
+            <p>Regex isn't always the answer. Python has better tools for some tasks:</p>
+
+            <ul>
+                <li><strong>Simple string checks:</strong> Use <span class="inline-code">str.startswith()</span>, <span class="inline-code">str.endswith()</span>, <span class="inline-code">"x" in s</span></li>
+                <li><strong>Splitting on a fixed delimiter:</strong> Use <span class="inline-code">str.split(",")</span></li>
+                <li><strong>Replacing a fixed string:</strong> Use <span class="inline-code">str.replace()</span></li>
+                <li><strong>Parsing JSON/XML/HTML:</strong> Use <span class="inline-code">json</span>, <span class="inline-code">lxml</span>, <span class="inline-code">BeautifulSoup</span></li>
+                <li><strong>Complex grammars:</strong> Use a parser library like <span class="inline-code">pyparsing</span> or write a proper parser</li>
+                <li><strong>Path manipulation:</strong> Use <span class="inline-code">pathlib</span></li>
+            </ul>
+
+            <div class="cta">
+                <p>🚀 Want 50+ production-ready Python scripts including text processors, scrapers, and automation tools?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="web-scraping-python-guide.html">Web Scraping with Python</a> — regex for extracting data from pages</li>
+                <li><a href="python-logging-monitoring.html">Python Logging & Monitoring</a> — parse log files with regex</li>
+                <li><a href="data-pipeline-python.html">Build a Data Pipeline in Python</a> — regex in ETL transforms</li>
+                <li><a href="cli-tool-python.html">Build a Professional CLI Tool</a> — input validation with regex</li>
+                <li><a href="python-automation-scripts.html">5 Python Scripts Every Developer Should Have</a></li>
+            </ul>
+
+            <p>Need custom text processing or data extraction scripts? I build Python automation tools and data pipelines. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
