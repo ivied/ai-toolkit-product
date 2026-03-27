@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python + MongoDB — Build NoSQL Applications (2026 Guide)</title>
+    <meta name="description" content="Complete guide to using MongoDB with Python. PyMongo CRUD, data modeling, aggregation pipelines, indexing, Motor for async, ODM with Beanie, transactions, Atlas search, and production patterns.">
+    <meta name="keywords" content="python mongodb, pymongo tutorial, mongodb python crud, motor async mongodb, beanie odm, mongodb aggregation python, nosql python, mongodb atlas python">
+    <meta property="og:title" content="Python + MongoDB — Build NoSQL Applications (2026 Guide)">
+    <meta property="og:description" content="Master MongoDB with Python: PyMongo, Motor async, Beanie ODM, aggregation pipelines, indexing, and production patterns.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-mongodb.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-mongodb.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python + MongoDB — Build NoSQL Applications</h1>
+            <p class="meta">March 2026 · 22 min read · Python, MongoDB, NoSQL, PyMongo</p>
+
+            <p>MongoDB is the most popular NoSQL database for a reason — flexible schemas, powerful queries, and natural fit for Python's dict-based data model. This guide covers everything from basic CRUD to production-grade patterns with aggregation pipelines, async operations, and ODM frameworks.</p>
+
+            <h2>When to Use MongoDB</h2>
+
+            <ul>
+                <li><strong>Flexible schemas</strong> — documents can have different fields (user profiles, product catalogs, logs)</li>
+                <li><strong>Nested data</strong> — embed related data instead of JOINs (orders with items, articles with comments)</li>
+                <li><strong>High write throughput</strong> — event logging, IoT data, real-time analytics</li>
+                <li><strong>Rapid prototyping</strong> — no migrations, just start storing data</li>
+            </ul>
+
+            <p>For relational data with strict schemas, see our <a href="database-operations-python.html">SQLite/PostgreSQL guide</a>. For caching and simple key-value, see our <a href="python-redis.html">Redis guide</a>.</p>
+
+            <h2>Setup</h2>
+
+<pre><code># Install PyMongo (sync) and Motor (async)
+pip install pymongo motor beanie
+
+# Run MongoDB with Docker
+docker run -d --name mongo \
+  -p 27017:27017 \
+  -e MONGO_INITDB_ROOT_USERNAME=admin \
+  -e MONGO_INITDB_ROOT_PASSWORD=secret \
+  -v mongodata:/data/db \
+  mongo:7
+
+# Or use MongoDB Atlas (free tier):
+# https://cloud.mongodb.com → Create Cluster → Get connection string</code></pre>
+
+            <h2>PyMongo Basics — Synchronous CRUD</h2>
+
+            <h3>Connect and create</h3>
+
+<pre><code>from pymongo import MongoClient
+from datetime import datetime, timezone
+
+# Connect
+client = MongoClient("mongodb://admin:secret@localhost:27017")
+db = client["myapp"]          # database
+users = db["users"]           # collection
+
+# Insert one
+user = {
+    "name": "Alice Chen",
+    "email": "alice@example.com",
+    "role": "admin",
+    "skills": ["python", "mongodb", "fastapi"],
+    "profile": {
+        "bio": "Full-stack developer",
+        "location": "San Francisco",
+    },
+    "created_at": datetime.now(timezone.utc),
+}
+result = users.insert_one(user)
+print(f"Inserted: {result.inserted_id}")  # ObjectId('...')
+
+
+# Insert many
+new_users = [
+    {"name": "Bob", "email": "bob@example.com", "role": "user", "skills": ["javascript"]},
+    {"name": "Carol", "email": "carol@example.com", "role": "editor", "skills": ["python", "data"]},
+    {"name": "Dave", "email": "dave@example.com", "role": "user", "skills": ["rust", "go"]},
+]
+result = users.insert_many(new_users)
+print(f"Inserted {len(result.inserted_ids)} users")</code></pre>
+
+            <h3>Read (query)</h3>
+
+<pre><code># Find one
+alice = users.find_one({"email": "alice@example.com"})
+print(alice["name"])  # Alice Chen
+
+# Find many with filter
+python_devs = users.find({"skills": "python"})
+for dev in python_devs:
+    print(f"  {dev['name']} — {dev['skills']}")
+
+# Query operators
+from datetime import timedelta
+
+# Users created in last 7 days
+recent = users.find({
+    "created_at": {"$gte": datetime.now(timezone.utc) - timedelta(days=7)}
+})
+
+# Users with 3+ skills
+skilled = users.find({
+    "skills": {"$size": 3}  # exact size
+})
+
+# OR query
+admins_or_editors = users.find({
+    "$or": [
+        {"role": "admin"},
+        {"role": "editor"},
+    ]
+})
+
+# Nested field query
+sf_users = users.find({"profile.location": "San Francisco"})
+
+# Projection — only return specific fields
+names_only = users.find(
+    {"role": "user"},
+    {"name": 1, "email": 1, "_id": 0}  # 1=include, 0=exclude
+)
+
+# Sorting + pagination
+page = users.find().sort("name", 1).skip(20).limit(10)
+
+# Count
+total = users.count_documents({"role": "user"})
+print(f"Total users: {total}")</code></pre>
+
+            <div class="tip">
+                <strong>💡 Performance tip:</strong> Always use <span class="inline-code">find()</span> with a filter and projection. Fetching all fields from all documents is a quick way to kill performance. Index your query fields.
+            </div>
+
+            <h3>Update</h3>
+
+<pre><code># Update one field
+users.update_one(
+    {"email": "alice@example.com"},
+    {"$set": {"role": "superadmin", "updated_at": datetime.now(timezone.utc)}}
+)
+
+# Add to array
+users.update_one(
+    {"email": "bob@example.com"},
+    {"$push": {"skills": "typescript"}}
+)
+
+# Remove from array
+users.update_one(
+    {"email": "bob@example.com"},
+    {"$pull": {"skills": "javascript"}}
+)
+
+# Increment a counter
+users.update_one(
+    {"email": "alice@example.com"},
+    {"$inc": {"login_count": 1}}
+)
+
+# Update many
+users.update_many(
+    {"role": "user"},
+    {"$set": {"is_verified": False}}
+)
+
+# Upsert — update if exists, insert if not
+users.update_one(
+    {"email": "eve@example.com"},
+    {"$set": {"name": "Eve", "role": "user"}},
+    upsert=True
+)</code></pre>
+
+            <h3>Delete</h3>
+
+<pre><code># Delete one
+users.delete_one({"email": "dave@example.com"})
+
+# Delete many
+result = users.delete_many({"role": "inactive"})
+print(f"Deleted {result.deleted_count} users")
+
+# Delete with condition
+users.delete_many({
+    "created_at": {"$lt": datetime(2025, 1, 1, tzinfo=timezone.utc)}
+})</code></pre>
+
+            <h2>Data Modeling — Embed vs Reference</h2>
+
+            <p>The biggest design decision in MongoDB: when to embed documents vs when to reference them.</p>
+
+            <h3>Embed (denormalize) — for tightly coupled data</h3>
+
+<pre><code># Good: order with items — always read together
+order = {
+    "order_id": "ORD-001",
+    "customer": {
+        "name": "Alice",
+        "email": "alice@example.com",
+    },
+    "items": [
+        {"product": "Widget A", "qty": 2, "price": 29.99},
+        {"product": "Widget B", "qty": 1, "price": 49.99},
+    ],
+    "total": 109.97,
+    "status": "shipped",
+    "created_at": datetime.now(timezone.utc),
+}
+# One read = all data. No JOINs needed.</code></pre>
+
+            <h3>Reference — for loosely coupled, large, or shared data</h3>
+
+<pre><code># Good: blog post referencing author — authors shared across posts
+post = {
+    "title": "MongoDB Best Practices",
+    "content": "...",
+    "author_id": ObjectId("65a1b2c3d4e5f6a7b8c9d0e1"),  # reference
+    "tags": ["mongodb", "python"],
+}
+
+# Lookup author separately
+author = db.authors.find_one({"_id": post["author_id"]})</code></pre>
+
+            <table>
+                <tr><th>Embed when</th><th>Reference when</th></tr>
+                <tr><td>Data is read together</td><td>Data is shared across documents</td></tr>
+                <tr><td>One-to-few relationship</td><td>One-to-many (thousands+)</td></tr>
+                <tr><td>Child data is small</td><td>Child data is large or grows unbounded</td></tr>
+                <tr><td>Atomic updates needed</td><td>Independent update patterns</td></tr>
+            </table>
+
+            <h2>Aggregation Pipelines</h2>
+
+            <p>MongoDB's most powerful feature. Pipelines transform data through stages — like Unix pipes for your database.</p>
+
+<pre><code># Setup: orders collection
+orders = db["orders"]
+
+# Revenue by status
+pipeline = [
+    {"$group": {
+        "_id": "$status",
+        "total_revenue": {"$sum": "$total"},
+        "order_count": {"$sum": 1},
+        "avg_order": {"$avg": "$total"},
+    }},
+    {"$sort": {"total_revenue": -1}},
+]
+for doc in orders.aggregate(pipeline):
+    print(f"{doc['_id']}: ${doc['total_revenue']:.2f} ({doc['order_count']} orders)")
+
+
+# Top customers by spending
+top_customers = [
+    {"$group": {
+        "_id": "$customer.email",
+        "name": {"$first": "$customer.name"},
+        "total_spent": {"$sum": "$total"},
+        "orders": {"$sum": 1},
+    }},
+    {"$sort": {"total_spent": -1}},
+    {"$limit": 10},
+    {"$project": {
+        "_id": 0,
+        "email": "$_id",
+        "name": 1,
+        "total_spent": {"$round": ["$total_spent", 2]},
+        "orders": 1,
+    }},
+]
+
+
+# Unwind arrays — analyze individual items
+popular_products = [
+    {"$unwind": "$items"},
+    {"$group": {
+        "_id": "$items.product",
+        "total_qty": {"$sum": "$items.qty"},
+        "total_revenue": {"$sum": {"$multiply": ["$items.qty", "$items.price"]}},
+    }},
+    {"$sort": {"total_revenue": -1}},
+    {"$limit": 5},
+]
+
+
+# Date-based aggregation — monthly revenue
+monthly_revenue = [
+    {"$group": {
+        "_id": {
+            "year": {"$year": "$created_at"},
+            "month": {"$month": "$created_at"},
+        },
+        "revenue": {"$sum": "$total"},
+        "orders": {"$sum": 1},
+    }},
+    {"$sort": {"_id.year": 1, "_id.month": 1}},
+]
+
+
+# $lookup — JOIN equivalent
+orders_with_reviews = [
+    {"$lookup": {
+        "from": "reviews",
+        "localField": "order_id",
+        "foreignField": "order_id",
+        "as": "reviews",
+    }},
+    {"$match": {"reviews": {"$ne": []}}},  # only orders with reviews
+]</code></pre>
+
+            <h2>Indexing — Make Queries Fast</h2>
+
+<pre><code># Single field index
+users.create_index("email", unique=True)
+
+# Compound index (order matters!)
+orders.create_index([("customer.email", 1), ("created_at", -1)])
+
+# Text index for search
+db.articles.create_index([("title", "text"), ("content", "text")])
+results = db.articles.find({"$text": {"$search": "python mongodb"}})
+
+# TTL index — auto-delete old documents
+db.sessions.create_index("created_at", expireAfterSeconds=3600)  # 1h
+
+# Partial index — only index matching documents
+users.create_index(
+    "email",
+    partialFilterExpression={"is_active": True}
+)
+
+# Check existing indexes
+for idx in users.list_indexes():
+    print(f"  {idx['name']}: {idx['key']}")
+
+# Explain a query (check if index is used)
+explanation = users.find({"email": "alice@example.com"}).explain()
+print(explanation["queryPlanner"]["winningPlan"])</code></pre>
+
+            <div class="tip">
+                <strong>🎯 Index rules:</strong> Index fields you filter and sort on. Compound indexes support queries on any prefix (index on [a, b, c] covers queries on a, a+b, and a+b+c). Use <span class="inline-code">.explain()</span> to verify your queries use indexes.
+            </div>
+
+            <h2>Async with Motor</h2>
+
+            <p>For <a href="async-python-guide.html">async Python</a> apps (FastAPI, aiohttp), use Motor — the async MongoDB driver.</p>
+
+<pre><code>import motor.motor_asyncio
+import asyncio
+
+
+async def main():
+    # Connect
+    client = motor.motor_asyncio.AsyncIOMotorClient(
+        "mongodb://admin:secret@localhost:27017"
+    )
+    db = client["myapp"]
+    users = db["users"]
+
+    # Insert
+    result = await users.insert_one({
+        "name": "Frank",
+        "email": "frank@example.com",
+        "role": "user",
+    })
+    print(f"Inserted: {result.inserted_id}")
+
+    # Find
+    user = await users.find_one({"email": "frank@example.com"})
+    print(user["name"])
+
+    # Find many (async iteration)
+    async for doc in users.find({"role": "user"}).sort("name").limit(10):
+        print(f"  {doc['name']}")
+
+    # Aggregate
+    pipeline = [
+        {"$group": {"_id": "$role", "count": {"$sum": 1}}},
+    ]
+    async for doc in users.aggregate(pipeline):
+        print(f"  {doc['_id']}: {doc['count']}")
+
+    # Update
+    await users.update_one(
+        {"email": "frank@example.com"},
+        {"$set": {"role": "admin"}}
+    )
+
+    # Delete
+    await users.delete_one({"email": "frank@example.com"})
+
+
+asyncio.run(main())</code></pre>
+
+            <h3>Motor + FastAPI</h3>
+
+<pre><code># app.py
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, EmailStr
+import motor.motor_asyncio
+
+app = FastAPI()
+client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")
+db = client["myapp"]
+
+
+class UserCreate(BaseModel):
+    name: str
+    email: EmailStr
+
+
+class UserResponse(BaseModel):
+    name: str
+    email: str
+    role: str
+
+
+@app.post("/users", response_model=UserResponse, status_code=201)
+async def create_user(data: UserCreate):
+    if await db.users.find_one({"email": data.email}):
+        raise HTTPException(400, "Email already exists")
+
+    user = {**data.model_dump(), "role": "user"}
+    await db.users.insert_one(user)
+    return user
+
+
+@app.get("/users/{email}", response_model=UserResponse)
+async def get_user(email: str):
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user:
+        raise HTTPException(404, "User not found")
+    return user</code></pre>
+
+            <h2>Beanie ODM — Pydantic Models for MongoDB</h2>
+
+            <p>Beanie gives you Pydantic validation + MongoDB persistence — like SQLAlchemy for MongoDB.</p>
+
+<pre><code>from beanie import Document, Indexed, init_beanie
+from pydantic import EmailStr, Field
+from datetime import datetime, timezone
+from typing import Optional
+import motor.motor_asyncio
+
+
+class User(Document):
+    name: str
+    email: Indexed(EmailStr, unique=True)
+    role: str = "user"
+    skills: list[str] = []
+    profile: Optional[dict] = None
+    login_count: int = 0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    class Settings:
+        name = "users"  # collection name
+
+
+class Article(Document):
+    title: str
+    content: str
+    author: User  # can embed other documents
+    tags: list[str] = []
+    views: int = 0
+    published: bool = False
+
+    class Settings:
+        name = "articles"
+
+
+# Initialize
+async def init():
+    client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")
+    await init_beanie(database=client["myapp"], document_models=[User, Article])
+
+
+# CRUD with Beanie
+async def demo():
+    await init()
+
+    # Create
+    user = User(name="Grace", email="grace@example.com", skills=["python", "mongo"])
+    await user.insert()
+
+    # Read
+    grace = await User.find_one(User.email == "grace@example.com")
+    print(grace.name)
+
+    # Find many
+    python_devs = await User.find(User.skills == "python").to_list()
+
+    # Update
+    grace.role = "admin"
+    grace.login_count += 1
+    await grace.save()
+
+    # Or atomic update
+    await User.find_one(User.email == "grace@example.com").update(
+        {"$inc": {"login_count": 1}}
+    )
+
+    # Aggregation
+    role_counts = await User.aggregate(
+        [{"$group": {"_id": "$role", "count": {"$sum": 1}}}]
+    ).to_list()
+
+    # Delete
+    await grace.delete()</code></pre>
+
+            <h2>Transactions</h2>
+
+            <p>MongoDB supports multi-document ACID transactions (replica set required).</p>
+
+<pre><code>async def transfer_credits(from_email: str, to_email: str, amount: int):
+    """Atomic credit transfer between users."""
+    async with await client.start_session() as session:
+        async with session.start_transaction():
+            # Deduct from sender
+            sender = await db.users.find_one_and_update(
+                {"email": from_email, "credits": {"$gte": amount}},
+                {"$inc": {"credits": -amount}},
+                session=session,
+            )
+            if not sender:
+                raise ValueError("Insufficient credits")
+
+            # Add to receiver
+            await db.users.update_one(
+                {"email": to_email},
+                {"$inc": {"credits": amount}},
+                session=session,
+            )
+
+            # Log the transfer
+            await db.transfers.insert_one({
+                "from": from_email,
+                "to": to_email,
+                "amount": amount,
+                "timestamp": datetime.now(timezone.utc),
+            }, session=session)
+
+            # Transaction auto-commits when context manager exits
+            # If any operation fails, everything rolls back</code></pre>
+
+            <h2>Production Patterns</h2>
+
+            <h3>Connection pooling</h3>
+
+<pre><code># PyMongo handles pooling automatically
+client = MongoClient(
+    "mongodb://admin:secret@localhost:27017",
+    maxPoolSize=50,        # max concurrent connections
+    minPoolSize=10,        # keep warm connections
+    maxIdleTimeMS=30000,   # close idle after 30s
+    connectTimeoutMS=5000, # connection timeout
+    serverSelectionTimeoutMS=5000,
+)</code></pre>
+
+            <h3>Change streams — react to data changes</h3>
+
+<pre><code>async def watch_orders():
+    """React to new orders in real-time."""
+    async with db.orders.watch(
+        [{"$match": {"operationType": "insert"}}],
+        full_document="updateLookup",
+    ) as stream:
+        async for change in stream:
+            order = change["fullDocument"]
+            print(f"New order: {order['order_id']} — ${order['total']}")
+            await send_notification(order["customer"]["email"])</code></pre>
+
+            <h3>Bulk operations</h3>
+
+<pre><code>from pymongo import InsertOne, UpdateOne, DeleteOne
+
+# Batch operations for performance
+operations = [
+    InsertOne({"name": "User1", "email": "u1@x.com"}),
+    InsertOne({"name": "User2", "email": "u2@x.com"}),
+    UpdateOne({"email": "alice@example.com"}, {"$set": {"role": "admin"}}),
+    DeleteOne({"email": "old@example.com"}),
+]
+
+result = users.bulk_write(operations, ordered=False)  # parallel execution
+print(f"Inserted: {result.inserted_count}, Modified: {result.modified_count}")</code></pre>
+
+            <h2>MongoDB vs SQL — Quick Reference</h2>
+
+            <table>
+                <tr><th>SQL</th><th>MongoDB</th></tr>
+                <tr><td>Database</td><td>Database</td></tr>
+                <tr><td>Table</td><td>Collection</td></tr>
+                <tr><td>Row</td><td>Document</td></tr>
+                <tr><td>Column</td><td>Field</td></tr>
+                <tr><td>JOIN</td><td>$lookup / embed</td></tr>
+                <tr><td>WHERE</td><td>find({filter})</td></tr>
+                <tr><td>GROUP BY</td><td>$group</td></tr>
+                <tr><td>ALTER TABLE</td><td>Not needed (schema-less)</td></tr>
+                <tr><td>INDEX</td><td>create_index()</td></tr>
+            </table>
+
+            <div class="cta">
+                <p>🚀 Want production-ready MongoDB scripts, API templates, and data pipelines?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="database-operations-python.html">Python Database Operations — SQLite, PostgreSQL & SQLAlchemy</a></li>
+                <li><a href="python-redis.html">Python + Redis — Caching, Queues & Real-Time Data</a></li>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI</a> — combine with MongoDB backend</li>
+                <li><a href="async-python-guide.html">Python Async Programming</a> — Motor async patterns</li>
+                <li><a href="data-pipeline-python.html">Build a Data Pipeline in Python</a> — ETL with MongoDB as source/sink</li>
+                <li><a href="python-microservices.html">Python Microservices</a> — database-per-service with MongoDB</li>
+            </ul>
+
+            <p>Need a MongoDB-backed API or data pipeline built? I build Python apps, APIs, and automation tools. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
