@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Error Handling — Build Resilient Applications (2026)</title>
+    <meta name="description" content="Master Python error handling: custom exceptions, try/except patterns, context managers, retry logic, error boundaries, structured error responses, logging, and production resilience patterns.">
+    <meta name="keywords" content="python error handling, python exceptions, try except python, custom exceptions python, python retry, error handling best practices, python resilience, exception hierarchy python">
+    <meta property="og:title" content="Python Error Handling — Build Resilient Applications (2026)">
+    <meta property="og:description" content="Go beyond try/except. Build Python apps that handle failures gracefully with custom exceptions, retry logic, error boundaries, and production patterns.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-error-handling.html">
+    <link rel="canonical" href="https://openclawmara.codeberg.page/ai-toolkit-product/blog/python-error-handling.html">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: #1e1e2e;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #667eea;
+            --accent2: #764ba2;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.7; }
+        .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem; }
+        h1 { font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+        p { margin-bottom: 1rem; color: var(--text-dim); }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .meta { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2rem; }
+        pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.88rem; line-height: 1.6; }
+        code { font-family: 'SF Mono', 'Fira Code', monospace; color: #e0e0e0; }
+        .inline-code { background: var(--surface); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.88rem; border: 1px solid var(--border); }
+        ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; color: var(--text-dim); }
+        .tip { background: rgba(102,126,234,0.1); border-left: 3px solid var(--accent); padding: 1rem 1.2rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; }
+        .tip strong { color: var(--accent); }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .nav a { color: var(--text-dim); font-size: 0.9rem; }
+        footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-dim); font-size: 0.85rem; }
+        .cta { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 2rem 0; }
+        .cta a { color: white; font-weight: bold; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; }
+        th, td { padding: 0.6rem 0.8rem; border: 1px solid var(--border); text-align: left; font-size: 0.9rem; color: var(--text-dim); }
+        th { background: var(--surface); color: var(--text); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <a href="../">← AI Toolkit</a>
+            <a href="./">All Articles</a>
+        </nav>
+
+        <article>
+            <h1>Python Error Handling — Build Resilient Applications</h1>
+            <p class="meta">March 2026 · 20 min read · Python, Error Handling, Resilience</p>
+
+            <p>Most Python tutorials teach <span class="inline-code">try/except</span> and call it a day. Real-world applications need more: custom exception hierarchies, structured error responses, retry strategies, error boundaries, and graceful degradation. This guide covers the patterns that separate hobby scripts from production code.</p>
+
+            <h2>Beyond Basic try/except</h2>
+
+            <h3>The anti-patterns</h3>
+
+<pre><code># ❌ Bare except — catches EVERYTHING including KeyboardInterrupt
+try:
+    result = risky_operation()
+except:
+    pass  # Silently swallows all errors
+
+# ❌ Pokemon exception handling — gotta catch 'em all
+try:
+    data = fetch_data()
+    processed = transform(data)
+    save_to_db(processed)
+except Exception as e:
+    print(f"Something went wrong: {e}")  # Which operation failed?
+
+# ❌ Exception as flow control
+try:
+    value = my_dict[key]
+except KeyError:
+    value = default  # Just use .get(key, default)!</code></pre>
+
+            <h3>The right patterns</h3>
+
+<pre><code># ✅ Specific exceptions, separate handlers
+try:
+    data = fetch_from_api(url)
+except httpx.TimeoutException:
+    logger.warning(f"API timeout for {url}, using cached data")
+    data = get_cached(url)
+except httpx.HTTPStatusError as e:
+    if e.response.status_code == 429:
+        logger.info("Rate limited, backing off")
+        time.sleep(int(e.response.headers.get("Retry-After", 60)))
+        data = fetch_from_api(url)  # retry once
+    else:
+        raise  # Re-raise unexpected HTTP errors
+
+# ✅ Else and finally
+try:
+    conn = database.connect()
+except ConnectionError:
+    logger.error("Database unavailable")
+    raise
+else:
+    # Only runs if NO exception — use for "success" logic
+    logger.info("Connected to database")
+    result = conn.execute(query)
+finally:
+    # ALWAYS runs — cleanup
+    conn.close() if 'conn' in locals() else None</code></pre>
+
+            <div class="tip">
+                <strong>💡 Rule:</strong> Catch the most specific exception possible. If you catch <span class="inline-code">Exception</span>, you're probably hiding bugs. If you catch <span class="inline-code">BaseException</span>, you're definitely hiding bugs.
+            </div>
+
+            <h2>Custom Exception Hierarchies</h2>
+
+            <p>Your application should define its own exceptions. This separates your error domain from Python's built-in exceptions and makes error handling predictable.</p>
+
+<pre><code># app/exceptions.py
+
+class AppError(Exception):
+    """Base exception for our application.
+    All custom exceptions inherit from this.
+    """
+    def __init__(self, message: str, code: str = "INTERNAL_ERROR", details: dict = None):
+        self.message = message
+        self.code = code
+        self.details = details or {}
+        super().__init__(self.message)
+
+
+# --- Domain errors (business logic) ---
+class ValidationError(AppError):
+    """Input data is invalid."""
+    def __init__(self, message: str, field: str = None):
+        super().__init__(
+            message=message,
+            code="VALIDATION_ERROR",
+            details={"field": field} if field else {},
+        )
+
+
+class NotFoundError(AppError):
+    """Requested resource doesn't exist."""
+    def __init__(self, resource: str, identifier: str):
+        super().__init__(
+            message=f"{resource} '{identifier}' not found",
+            code="NOT_FOUND",
+            details={"resource": resource, "identifier": identifier},
+        )
+
+
+class ConflictError(AppError):
+    """Operation conflicts with current state."""
+    def __init__(self, message: str):
+        super().__init__(message=message, code="CONFLICT")
+
+
+class AuthenticationError(AppError):
+    """User is not authenticated."""
+    def __init__(self, message: str = "Authentication required"):
+        super().__init__(message=message, code="UNAUTHORIZED")
+
+
+class PermissionError(AppError):
+    """User lacks required permissions."""
+    def __init__(self, action: str, resource: str):
+        super().__init__(
+            message=f"Permission denied: cannot {action} {resource}",
+            code="FORBIDDEN",
+            details={"action": action, "resource": resource},
+        )
+
+
+# --- Infrastructure errors ---
+class ExternalServiceError(AppError):
+    """External API/service is unavailable or returned an error."""
+    def __init__(self, service: str, message: str, retry_after: int = None):
+        super().__init__(
+            message=f"{service}: {message}",
+            code="EXTERNAL_SERVICE_ERROR",
+            details={"service": service, "retry_after": retry_after},
+        )
+
+
+class DatabaseError(AppError):
+    """Database operation failed."""
+    def __init__(self, operation: str, message: str):
+        super().__init__(
+            message=f"Database {operation} failed: {message}",
+            code="DATABASE_ERROR",
+            details={"operation": operation},
+        )</code></pre>
+
+            <h3>Using the hierarchy</h3>
+
+<pre><code>from app.exceptions import NotFoundError, ValidationError, ExternalServiceError
+
+
+class UserService:
+    def get_user(self, user_id: int) -> User:
+        user = self.repo.find_by_id(user_id)
+        if not user:
+            raise NotFoundError("User", str(user_id))
+        return user
+
+    def create_user(self, email: str, name: str) -> User:
+        if not email or "@" not in email:
+            raise ValidationError("Invalid email format", field="email")
+
+        existing = self.repo.find_by_email(email)
+        if existing:
+            raise ConflictError(f"User with email {email} already exists")
+
+        return self.repo.create(User(email=email, name=name))
+
+    def enrich_profile(self, user_id: int) -> dict:
+        user = self.get_user(user_id)
+        try:
+            profile = self.github_client.get_profile(user.github_username)
+        except httpx.TimeoutException:
+            raise ExternalServiceError("GitHub", "Request timed out", retry_after=30)
+        except httpx.HTTPStatusError as e:
+            raise ExternalServiceError("GitHub", f"HTTP {e.response.status_code}")
+        return {**user.to_dict(), "github": profile}</code></pre>
+
+            <h2>Structured Error Responses (APIs)</h2>
+
+            <p>When building APIs with <a href="fastapi-rest-api.html">FastAPI</a>, convert your exceptions into consistent JSON responses:</p>
+
+<pre><code># app/error_handlers.py
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from app.exceptions import AppError, NotFoundError, ValidationError, AuthenticationError
+
+ERROR_STATUS_CODES = {
+    "VALIDATION_ERROR": 422,
+    "NOT_FOUND": 404,
+    "CONFLICT": 409,
+    "UNAUTHORIZED": 401,
+    "FORBIDDEN": 403,
+    "EXTERNAL_SERVICE_ERROR": 502,
+    "DATABASE_ERROR": 500,
+    "INTERNAL_ERROR": 500,
+}
+
+
+def register_error_handlers(app: FastAPI):
+
+    @app.exception_handler(AppError)
+    async def app_error_handler(request: Request, exc: AppError):
+        status_code = ERROR_STATUS_CODES.get(exc.code, 500)
+        return JSONResponse(
+            status_code=status_code,
+            content={
+                "error": {
+                    "code": exc.code,
+                    "message": exc.message,
+                    "details": exc.details,
+                }
+            },
+        )
+
+    @app.exception_handler(Exception)
+    async def unhandled_error_handler(request: Request, exc: Exception):
+        # Log the full traceback — never expose it to the client
+        import traceback
+        logger.error(
+            "Unhandled exception",
+            path=request.url.path,
+            method=request.method,
+            error=str(exc),
+            traceback=traceback.format_exc(),
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": {
+                    "code": "INTERNAL_ERROR",
+                    "message": "An unexpected error occurred",
+                    "details": {},
+                }
+            },
+        )</code></pre>
+
+            <p>Now every error returns a consistent shape:</p>
+
+<pre><code># 404
+{
+    "error": {
+        "code": "NOT_FOUND",
+        "message": "User '42' not found",
+        "details": {"resource": "User", "identifier": "42"}
+    }
+}
+
+# 422
+{
+    "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Invalid email format",
+        "details": {"field": "email"}
+    }
+}</code></pre>
+
+            <h2>Retry Strategies</h2>
+
+            <p>Network calls fail. Databases hiccup. APIs rate-limit you. Retry logic is essential.</p>
+
+<pre><code>import time
+import random
+import functools
+from typing import Type
+
+
+def retry(
+    max_attempts: int = 3,
+    exceptions: tuple[Type[Exception], ...] = (Exception,),
+    base_delay: float = 1.0,
+    max_delay: float = 60.0,
+    backoff_factor: float = 2.0,
+    jitter: bool = True,
+    on_retry: callable = None,
+):
+    """Decorator: retry with exponential backoff and jitter."""
+
+    def decorator(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return fn(*args, **kwargs)
+                except exceptions as e:
+                    last_exception = e
+
+                    if attempt == max_attempts:
+                        break
+
+                    delay = min(base_delay * (backoff_factor ** (attempt - 1)), max_delay)
+                    if jitter:
+                        delay *= 0.5 + random.random()
+
+                    if on_retry:
+                        on_retry(attempt, max_attempts, e, delay)
+
+                    time.sleep(delay)
+
+            raise last_exception
+
+        return wrapper
+    return decorator
+
+
+# --- Usage ---
+@retry(
+    max_attempts=3,
+    exceptions=(ConnectionError, TimeoutError),
+    base_delay=1.0,
+    on_retry=lambda attempt, max_a, err, delay: print(
+        f"Attempt {attempt}/{max_a} failed: {err}. Retrying in {delay:.1f}s"
+    ),
+)
+def call_external_api(endpoint: str) -> dict:
+    resp = httpx.get(endpoint, timeout=10.0)
+    resp.raise_for_status()
+    return resp.json()</code></pre>
+
+            <h3>Async retry</h3>
+
+<pre><code>import asyncio
+
+def async_retry(max_attempts=3, exceptions=(Exception,), base_delay=1.0):
+    """Async version of retry decorator."""
+    def decorator(fn):
+        @functools.wraps(fn)
+        async def wrapper(*args, **kwargs):
+            last_exc = None
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return await fn(*args, **kwargs)
+                except exceptions as e:
+                    last_exc = e
+                    if attempt < max_attempts:
+                        delay = base_delay * (2 ** (attempt - 1)) * (0.5 + random.random())
+                        await asyncio.sleep(delay)
+            raise last_exc
+        return wrapper
+    return decorator
+
+
+@async_retry(max_attempts=3, exceptions=(httpx.TimeoutException,))
+async def fetch_data(url: str):
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(url, timeout=5.0)
+        return resp.json()</code></pre>
+
+            <h2>Error Boundaries</h2>
+
+            <p>An error boundary contains failures — preventing one bad operation from crashing the entire system.</p>
+
+<pre><code>from contextlib import contextmanager
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def error_boundary(
+    operation: str,
+    fallback=None,
+    suppress: tuple[Type[Exception], ...] = (Exception,),
+    log_level: int = logging.ERROR,
+):
+    """Contain errors within a boundary. Return fallback on failure."""
+    try:
+        yield
+    except suppress as e:
+        logger.log(log_level, f"Error in {operation}: {e}", exc_info=True)
+        if fallback is not None:
+            return fallback
+
+
+# --- Usage ---
+def process_batch(items: list[dict]) -> list[dict]:
+    """Process items — failures in individual items don't kill the batch."""
+    results = []
+
+    for item in items:
+        with error_boundary(f"processing item {item.get('id')}", fallback=None):
+            processed = transform(item)
+            validate(processed)
+            results.append(processed)
+
+    success_rate = len(results) / len(items) * 100
+    logger.info(f"Batch complete: {len(results)}/{len(items)} ({success_rate:.0f}%)")
+
+    if success_rate < 50:
+        raise RuntimeError(
+            f"Batch failure rate too high: {100 - success_rate:.0f}%. "
+            f"Aborting to prevent data quality issues."
+        )
+
+    return results</code></pre>
+
+            <h3>Error boundary for external services</h3>
+
+<pre><code>class ServiceDegradation:
+    """Graceful degradation when external services fail."""
+
+    def __init__(self):
+        self._fallbacks: dict[str, callable] = {}
+
+    def register_fallback(self, service: str, fallback: callable):
+        self._fallbacks[service] = fallback
+
+    @contextmanager
+    def call(self, service: str):
+        """Try the primary service, fall back on failure."""
+        try:
+            yield
+        except Exception as e:
+            logger.warning(f"{service} unavailable: {e}")
+            fallback = self._fallbacks.get(service)
+            if fallback:
+                logger.info(f"Using fallback for {service}")
+                return fallback()
+            raise ExternalServiceError(service, str(e))
+
+
+# --- Usage ---
+degradation = ServiceDegradation()
+degradation.register_fallback("recommendations", lambda: [])  # empty recs
+degradation.register_fallback("weather", lambda: {"temp": "N/A"})
+
+with degradation.call("recommendations"):
+    recs = recommendation_engine.get_for_user(user_id)
+# If recommendation engine is down → returns [], app continues</code></pre>
+
+            <h2>Result Type Pattern</h2>
+
+            <p>Instead of raising exceptions, return a Result object. Popular in Rust and increasingly in Python for operations that commonly fail.</p>
+
+<pre><code>from dataclasses import dataclass
+from typing import TypeVar, Generic
+
+T = TypeVar("T")
+E = TypeVar("E")
+
+
+@dataclass(frozen=True)
+class Ok(Generic[T]):
+    value: T
+
+    def is_ok(self) -> bool:
+        return True
+
+    def is_err(self) -> bool:
+        return False
+
+    def unwrap(self) -> T:
+        return self.value
+
+    def unwrap_or(self, default: T) -> T:
+        return self.value
+
+
+@dataclass(frozen=True)
+class Err(Generic[E]):
+    error: E
+
+    def is_ok(self) -> bool:
+        return False
+
+    def is_err(self) -> bool:
+        return True
+
+    def unwrap(self):
+        raise ValueError(f"Called unwrap on Err: {self.error}")
+
+    def unwrap_or(self, default):
+        return default
+
+
+Result = Ok | Err
+
+
+# --- Usage ---
+def parse_config(path: str) -> Result:
+    """Parse config file — returns Ok(config) or Err(message)."""
+    from pathlib import Path
+    import json
+
+    config_file = Path(path)
+    if not config_file.exists():
+        return Err(f"Config file not found: {path}")
+
+    try:
+        data = json.loads(config_file.read_text())
+    except json.JSONDecodeError as e:
+        return Err(f"Invalid JSON in {path}: {e}")
+
+    required = ["database_url", "secret_key"]
+    missing = [k for k in required if k not in data]
+    if missing:
+        return Err(f"Missing required keys: {missing}")
+
+    return Ok(data)
+
+
+# Caller decides how to handle
+result = parse_config("config.json")
+
+if result.is_ok():
+    config = result.unwrap()
+    print(f"Loaded {len(config)} settings")
+else:
+    print(f"Config error: {result.error}")
+    config = {"database_url": "sqlite:///default.db", "secret_key": "dev-only"}
+
+# Or with unwrap_or:
+config = parse_config("config.json").unwrap_or(default_config)</code></pre>
+
+            <h2>Logging Errors Properly</h2>
+
+            <p>See our <a href="python-logging-monitoring.html">logging guide</a> for full details. Key error-logging patterns:</p>
+
+<pre><code>import logging
+import traceback
+
+logger = logging.getLogger(__name__)
+
+
+# ✅ Log with exc_info for full traceback
+try:
+    process_payment(order)
+except PaymentError as e:
+    logger.error("Payment failed for order %s", order.id, exc_info=True)
+    # exc_info=True includes the full traceback in logs
+
+
+# ✅ Structured context
+try:
+    sync_inventory(warehouse_id)
+except Exception as e:
+    logger.error(
+        "Inventory sync failed",
+        extra={
+            "warehouse_id": warehouse_id,
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "retry_count": attempt,
+        },
+        exc_info=True,
+    )
+
+
+# ✅ Different levels for different severities
+except ValidationError as e:
+    logger.warning("Validation failed: %s", e)     # Expected, user error
+except DatabaseError as e:
+    logger.error("Database error: %s", e)           # Unexpected, needs attention
+except Exception as e:
+    logger.critical("Unhandled error: %s", e)       # Something is very wrong</code></pre>
+
+            <h2>Exception Groups (Python 3.11+)</h2>
+
+            <p>Handle multiple errors from concurrent operations:</p>
+
+<pre><code>import asyncio
+
+
+async def fetch_all(urls: list[str]) -> dict:
+    """Fetch multiple URLs, collect all errors."""
+
+    async def fetch_one(url):
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, timeout=10.0)
+            resp.raise_for_status()
+            return url, resp.json()
+
+    results = {}
+    tasks = [asyncio.create_task(fetch_one(url)) for url in urls]
+
+    # gather with return_exceptions collects all results/errors
+    outcomes = await asyncio.gather(*tasks, return_exceptions=True)
+
+    errors = []
+    for url, outcome in zip(urls, outcomes):
+        if isinstance(outcome, Exception):
+            errors.append(outcome)
+        else:
+            results[outcome[0]] = outcome[1]
+
+    if errors:
+        # Raise all errors as a group
+        raise ExceptionGroup(
+            f"{len(errors)} of {len(urls)} fetches failed",
+            errors,
+        )
+
+    return results
+
+
+# Handle with except*
+try:
+    data = asyncio.run(fetch_all(["https://api1.com", "https://api2.com"]))
+except* httpx.TimeoutException as eg:
+    print(f"{len(eg.exceptions)} timeouts")
+except* httpx.HTTPStatusError as eg:
+    for e in eg.exceptions:
+        print(f"HTTP error: {e.response.status_code}")</code></pre>
+
+            <h2>Production Patterns Summary</h2>
+
+            <table>
+                <tr><th>Pattern</th><th>When to Use</th><th>Example</th></tr>
+                <tr><td>Custom exceptions</td><td>Domain-specific errors</td><td><span class="inline-code">NotFoundError("User", "42")</span></td></tr>
+                <tr><td>Error hierarchy</td><td>Catch groups of related errors</td><td><span class="inline-code">except AppError</span></td></tr>
+                <tr><td>Retry with backoff</td><td>Transient failures (network, rate limits)</td><td><span class="inline-code">@retry(max_attempts=3)</span></td></tr>
+                <tr><td>Error boundary</td><td>Isolate failures in batch processing</td><td><span class="inline-code">with error_boundary("op"):</span></td></tr>
+                <tr><td>Result type</td><td>Operations that commonly fail</td><td><span class="inline-code">Ok(value) / Err(msg)</span></td></tr>
+                <tr><td>Graceful degradation</td><td>External service outages</td><td>Fallback to cache/defaults</td></tr>
+                <tr><td>Structured responses</td><td>API error consistency</td><td>JSON with code/message/details</td></tr>
+                <tr><td>Exception groups</td><td>Concurrent operation errors</td><td><span class="inline-code">except* TimeoutError</span></td></tr>
+            </table>
+
+            <div class="cta">
+                <p>🚀 Want production-ready Python tools with proper error handling built in?</p>
+                <p><a href="https://payhip.com/b/Qu4LM">Get the AI Agent Toolkit →</a></p>
+            </div>
+
+            <h2>Related Articles</h2>
+
+            <ul>
+                <li><a href="fastapi-rest-api.html">Build a REST API with FastAPI</a> — structured error responses in practice</li>
+                <li><a href="python-logging-monitoring.html">Python Logging & Monitoring</a> — log errors with context and structure</li>
+                <li><a href="python-microservices.html">Python Microservices</a> — circuit breakers and resilience patterns</li>
+                <li><a href="testing-python.html">Python Testing Guide</a> — test your error handling with pytest</li>
+                <li><a href="async-python-guide.html">Python Async Programming</a> — async error handling and exception groups</li>
+                <li><a href="design-patterns-python.html">Python Design Patterns</a> — decorator and context manager patterns</li>
+            </ul>
+
+            <p>Need resilient Python applications built for production? I build APIs, automation tools, and distributed systems. <a href="https://t.me/kristy_ai_asst">Reach out on Telegram →</a></p>
+        </article>
+
+        <footer>
+            <p>© 2026 AI Agent Toolkit · <a href="../">Home</a> · <a href="./">Blog</a></p>
+        </footer>
+    </div>
+</body>
+</html>
